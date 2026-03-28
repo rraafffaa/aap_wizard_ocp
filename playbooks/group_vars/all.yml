@@ -1,0 +1,42 @@
+# ============================================================
+# Azure + AAP + AI Foundry Configuration
+# Edit these values before running the playbooks
+# ============================================================
+
+# Azure
+azure_resource_group: aap-wizard-demo-rg
+azure_location: eastus
+azure_vm_name: aap-demo-vm
+azure_vm_size: Standard_D4s_v3          # 4 vCPU, 16 GB RAM
+azure_vm_os_disk_size_gb: 128           # OS disk
+azure_vm_data_disk_size_gb: 100         # Data disk for AAP
+azure_vm_image:
+  publisher: RedHat
+  offer: RHEL
+  sku: "9_4"
+  version: latest
+azure_vm_admin_user: aap
+azure_vnet_name: aap-demo-vnet
+azure_subnet_name: aap-demo-subnet
+azure_nsg_name: aap-demo-nsg
+azure_public_ip_name: aap-demo-pip
+
+# AAP
+aap_version: "2.6"
+aap_installer_bundle: ansible-automation-platform-containerized-setup-2.6-6
+aap_install_dir: /opt/aap
+aap_gateway_host: "{{ azure_vm_name }}.{{ azure_location }}.cloudapp.azure.com"
+aap_admin_password: "{{ vault_aap_admin_password | default('ChangeMe!2026') }}"
+aap_registry_username: "{{ vault_registry_username }}"
+aap_registry_password: "{{ vault_registry_password }}"
+aap_pg_password: "{{ vault_pg_password | default('PgPass!2026') }}"
+
+# Azure AI Foundry (for Ansible Lightspeed / ALIA)
+ai_foundry_resource_group: "{{ azure_resource_group }}"
+ai_foundry_account_name: aap-ai-foundry
+ai_foundry_project_name: aap-lightspeed
+ai_foundry_model_name: gpt-4o
+ai_foundry_model_version: "2024-11-20"
+ai_foundry_deployment_name: aap-alia
+ai_foundry_sku_capacity: 10             # Tokens-per-minute in thousands
+ai_foundry_location: "{{ azure_location }}"

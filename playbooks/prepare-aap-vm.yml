@@ -1,0 +1,218 @@
+---
+# prepare-aap-vm.yml — Prepare a RHEL 9 VM for AAP 2.6 Containerized deployment
+#
+# Usage:
+#   ansible-playbook playbooks/prepare-aap-vm.yml -i "192.0.2.10," \
+#     -e "ansible_user=rafeal ansible_password=REDACTED_PASSWORD" \
+#     -e "rh_username=<registry_user> rh_password=<registry_pass>"
+#
+# What it does:
+#   1. Registers with RHSM (if credentials provided)
+#   2. Installs podman, ansible-core, and all AAP prerequisites
+#   3. Configures storage for podman (relocates to /opt if /home is small)
+#   4. Opens firewall ports (443, 5432, 27199)
+#   5. Tunes sysctl and systemd for containerized workloads
+#   6. Pre-authenticates with registry.redhat.io
+#   7. Validates the system is AAP-ready
+
+- name: Prepare RHEL 9 VM for AAP 2.6 Containerized
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # Override these with -e flags
+    rh_username: ""
+    rh_password: ""
+    aap_ports:
+      - 443/tcp    # Gateway HTTPS
+      - 80/tcp     # Gateway HTTP (redirect)
+      - 5432/tcp   # PostgreSQL
+      - 27199/tcp  # Receptor mesh
+    min_disk_gb: 40
+    min_ram_mb: 15000
+    podman_storage_path: /opt/containers/storage
+    aap_data_path: /opt/aap
+
+  tasks:
+    # ── System Validation ──────────────────────────────────
+    - name: Validate RHEL 9
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "RedHat"
+          - ansible_distribution_major_version == "9"
+        fail_msg: "AAP 2.6 requires RHEL 9. Found: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Check available RAM
+      ansible.builtin.assert:
+        that:
+          - ansible_memtotal_mb >= min_ram_mb
+        fail_msg: "Minimum {{ min_ram_mb }}MB RAM required. Found: {{ ansible_memtotal_mb }}MB"
+
+    - name: Check root filesystem space
+      ansible.builtin.shell: df -BG / | tail -1 | awk '{print $4}' | tr -d 'G'
+      register: root_space
+      changed_when: false
+
+    - name: Validate disk space
+      ansible.builtin.assert:
+        that:
+          - root_space.stdout | int >= min_disk_gb
+        fail_msg: "Minimum {{ min_disk_gb }}GB free on / required. Found: {{ root_space.stdout }}GB"
+
+    # ── RHSM Registration ──────────────────────────────────
+    - name: Register with Red Hat (if credentials provided)
+      community.general.redhat_subscription:
+        username: "{{ rh_username }}"
+        password: "{{ rh_password }}"
+        auto_attach: true
+        state: present
+      when: rh_username | length > 0
+      ignore_errors: true
+
+    # ── Package Installation ───────────────────────────────
+    - name: Install AAP prerequisites
+      ansible.builtin.dnf:
+        name:
+          - podman
+          - ansible-core
+          - python3
+          - python3-pip
+          - git
+          - curl
+          - wget
+          - tar
+          - unzip
+          - sshpass
+          - firewalld
+          - policycoreutils-python-utils
+          - container-selinux
+          - containernetworking-plugins
+          - slirp4netns
+          - fuse-overlayfs
+          - crun
+          - aardvark-dns
+          - netavark
+        state: present
+
+    - name: Ensure podman is latest
+      ansible.builtin.dnf:
+        name: podman
+        state: latest
+
+    # ── Podman Storage Configuration ───────────────────────
+    - name: Check /home size
+      ansible.builtin.shell: df -BM /home | tail -1 | awk '{print $2}' | tr -d 'M'
+      register: home_size
+      changed_when: false
+
+    - name: Create podman storage on /opt (if /home is small)
+      when: home_size.stdout | int < 10000
+      block:
+        - name: Create storage directories
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            mode: '0755'
+          loop:
+            - "{{ podman_storage_path }}"
+            - "{{ aap_data_path }}"
+
+        - name: Configure rootless podman storage for deploy user
+          ansible.builtin.copy:
+            dest: "/home/{{ ansible_user }}/.config/containers/storage.conf"
+            content: |
+              [storage]
+              driver = "overlay"
+              graphroot = "{{ podman_storage_path }}"
+              runroot = "/run/user/{{ ansible_user_uid }}/containers"
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+            mode: '0644'
+
+        - name: Set ownership on storage path
+          ansible.builtin.file:
+            path: "{{ podman_storage_path }}"
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+            recurse: true
+
+    # ── Firewall Configuration ─────────────────────────────
+    - name: Ensure firewalld is running
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Open AAP ports
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop: "{{ aap_ports }}"
+
+    # ── SELinux ────────────────────────────────────────────
+    - name: Set SELinux to permissive (AAP containerized requirement)
+      ansible.posix.selinux:
+        policy: targeted
+        state: permissive
+
+    # ── Sysctl Tuning ──────────────────────────────────────
+    - name: Apply sysctl settings for containerized workloads
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        sysctl_file: /etc/sysctl.d/99-aap.conf
+        reload: true
+      loop:
+        - { key: "net.ipv4.ip_unprivileged_port_start", value: "0" }
+        - { key: "net.ipv4.ip_forward", value: "1" }
+        - { key: "fs.inotify.max_user_watches", value: "524288" }
+        - { key: "fs.inotify.max_user_instances", value: "8192" }
+        - { key: "net.core.somaxconn", value: "65535" }
+
+    # ── Systemd Lingering ──────────────────────────────────
+    - name: Enable lingering for deploy user (rootless containers persist)
+      ansible.builtin.command: loginctl enable-linger {{ ansible_user }}
+      changed_when: true
+
+    # ── Registry Authentication ────────────────────────────
+    - name: Login to registry.redhat.io (if credentials provided)
+      become: false
+      ansible.builtin.command: >
+        podman login registry.redhat.io
+        --username "{{ rh_username }}"
+        --password "{{ rh_password }}"
+      when: rh_username | length > 0
+      changed_when: true
+      no_log: true
+
+    # ── Validation ─────────────────────────────────────────
+    - name: Verify podman works
+      become: false
+      ansible.builtin.command: podman info --format '{{ '{{' }}.Host.OCIRuntime.Name{{ '}}' }}'
+      register: podman_info
+      changed_when: false
+
+    - name: Verify ansible-core version
+      ansible.builtin.command: ansible --version
+      register: ansible_ver
+      changed_when: false
+
+    - name: Print readiness summary
+      ansible.builtin.debug:
+        msg: |
+          ╔══════════════════════════════════════════════╗
+          ║       VM READY FOR AAP 2.6 DEPLOYMENT       ║
+          ╠══════════════════════════════════════════════╣
+          ║ OS:         {{ ansible_distribution }} {{ ansible_distribution_version }}
+          ║ CPU:        {{ ansible_processor_vcpus }} vCPUs
+          ║ RAM:        {{ ansible_memtotal_mb }} MB
+          ║ Disk (/):   {{ root_space.stdout }}GB free
+          ║ Podman:     {{ podman_info.stdout }}
+          ║ Ansible:    {{ ansible_ver.stdout_lines[0] }}
+          ║ SELinux:    permissive
+          ║ Firewall:   ports {{ aap_ports | join(', ') }}
+          ║ Storage:    {{ podman_storage_path }}
+          ╚══════════════════════════════════════════════╝

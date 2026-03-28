@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+backend/venv/
+backend/.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Build output
+frontend/dist/
+
+# Electron
+frontend/release/
+frontend/build/icon.ico
+
+# AAP installer bundle (extracted directory - do not commit)
+ansible-automation-platform-containerized-setup-*/
+# Note: the .tar.gz tarball IS committed so coworkers get everything in one clone
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Python
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Misc
+.cursor/plans/

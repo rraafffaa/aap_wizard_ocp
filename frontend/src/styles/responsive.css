@@ -1,0 +1,307 @@
+/* ==========================================================================
+   AAP Deployment Wizard — Responsive Breakpoints & Mobile Adaptations
+   Breakpoints: 576px (sm), 768px (md), 992px (lg), 1200px (xl), 1400px (xxl)
+   ========================================================================== */
+
+:root {
+  --aap-bp-sm: 576px;
+  --aap-bp-md: 768px;
+  --aap-bp-lg: 992px;
+  --aap-bp-xl: 1200px;
+  --aap-bp-xxl: 1400px;
+}
+
+/* --------------------------------------------------------------------------
+   Small screens (max 768px): collapse sidebar, stack layouts
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .aap-sidebar {
+    display: none;
+  }
+
+  .aap-content {
+    padding: var(--aap-space-md) var(--aap-space-lg);
+  }
+
+  .aap-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-form-row--3col {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-selection-grid--2col {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-selection-grid--3col {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-welcome__features {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-requirements__list {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-header__title span {
+    display: none;
+  }
+
+  .aap-footer {
+    flex-wrap: wrap;
+    gap: var(--aap-space-sm);
+    padding: var(--aap-space-md) var(--aap-space-lg);
+    height: auto;
+    min-height: var(--aap-footer-height);
+  }
+
+  .aap-footer__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .aap-header {
+    padding: 0 var(--aap-space-md);
+  }
+
+  .aap-header__actions {
+    gap: var(--aap-space-xs);
+  }
+
+  .aap-modal {
+    width: 95%;
+    margin: var(--aap-space-md);
+  }
+
+  .aap-toast {
+    left: var(--aap-space-md);
+    right: var(--aap-space-md);
+    width: auto;
+  }
+
+  .aap-step__title {
+    font-size: 18px;
+  }
+
+  .aap-step__description {
+    font-size: 13px;
+  }
+
+  .aap-dl__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .aap-dl__value {
+    text-align: left;
+  }
+
+  .aap-check__message {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .aap-host-item {
+    flex-wrap: wrap;
+  }
+
+  .aap-host-item__actions {
+    margin-left: 0;
+    width: 100%;
+    margin-top: var(--aap-space-sm);
+  }
+
+  .aap-console__body {
+    max-height: 200px;
+  }
+
+  .aap-welcome {
+    padding: var(--aap-space-lg) 0;
+  }
+
+  .aap-welcome__heading {
+    font-size: 22px;
+  }
+
+  .aap-complete {
+    padding: var(--aap-space-xl) 0;
+  }
+
+  .aap-complete__title {
+    font-size: 20px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Medium screens (max 992px): adjust spacing, narrower sidebar
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .aap-sidebar {
+    width: 220px;
+  }
+
+  .aap-content {
+    padding: var(--aap-space-lg) var(--aap-space-xl);
+  }
+
+  .aap-welcome__features {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .aap-requirements__list {
+    grid-template-columns: 1fr;
+  }
+
+  .aap-form-row--3col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .aap-selection-grid--3col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .aap-content__inner {
+    max-width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Large screens (min 992px): restore full layout
+   -------------------------------------------------------------------------- */
+@media (min-width: 992px) {
+  .aap-sidebar {
+    width: var(--aap-sidebar-width);
+  }
+
+  .aap-content {
+    padding: var(--aap-space-xl) var(--aap-space-2xl);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Extra large screens (min 1200px)
+   -------------------------------------------------------------------------- */
+@media (min-width: 1200px) {
+  .aap-content__inner {
+    max-width: var(--aap-content-max-width);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   XXL screens (min 1400px): wider content
+   -------------------------------------------------------------------------- */
+@media (min-width: 1400px) {
+  :root {
+    --aap-content-max-width: 960px;
+  }
+
+  .aap-content__inner {
+    max-width: 960px;
+  }
+
+  .aap-welcome {
+    max-width: 720px;
+  }
+
+  .aap-step__description {
+    max-width: 680px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Small phones (max 576px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 576px) {
+  .aap-header__version {
+    display: none;
+  }
+
+  .aap-btn--tertiary span,
+  .aap-header__actions .aap-btn span:not(:first-child) {
+    display: none;
+  }
+
+  .aap-header__actions .aap-btn {
+    padding: var(--aap-space-sm);
+  }
+
+  .aap-modal__actions {
+    flex-direction: column;
+  }
+
+  .aap-modal__actions .aap-btn {
+    width: 100%;
+  }
+
+  .aap-footer__meta {
+    font-size: 11px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print styles
+   -------------------------------------------------------------------------- */
+@media print {
+  .aap-sidebar,
+  .aap-header,
+  .aap-footer,
+  .aap-overlay,
+  .aap-toast,
+  .aap-header__actions,
+  .aap-btn {
+    display: none !important;
+  }
+
+  .aap-content {
+    padding: 0;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .aap-body {
+    overflow: visible;
+  }
+
+  .aap-wizard {
+    height: auto;
+    min-height: auto;
+  }
+
+  .aap-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .aap-step__section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .aap-dl,
+  .aap-check-list,
+  .aap-host-list {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .aap-console,
+  .aap-code-block {
+    border: 1px solid #ccc;
+    background: #f5f5f5;
+  }
+
+  .aap-console__body,
+  .aap-code-block__body {
+    max-height: none;
+  }
+}

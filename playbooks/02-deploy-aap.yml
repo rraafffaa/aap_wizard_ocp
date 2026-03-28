@@ -1,0 +1,90 @@
+---
+# ============================================================
+# Deploy AAP 2.6 Containerized on the Azure VM
+# Requirements: AAP installer bundle extracted locally or on target
+# Usage: ansible-playbook -i playbooks/inventory_azure.ini playbooks/02-deploy-aap.yml
+# ============================================================
+
+- name: Deploy AAP 2.6 Containerized
+  hosts: aap_target
+  become: true
+  become_user: aap
+  gather_facts: true
+
+  vars:
+    aap_installer_path: "/home/aap/{{ aap_installer_bundle }}"
+
+  tasks:
+    - name: Check if installer bundle exists on target
+      ansible.builtin.stat:
+        path: "{{ aap_installer_path }}"
+      register: installer_check
+
+    - name: Copy installer bundle to target
+      when: not installer_check.stat.exists
+      block:
+        - name: Copy tarball
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../{{ aap_installer_bundle }}.tar.gz"
+            dest: "/home/aap/{{ aap_installer_bundle }}.tar.gz"
+            owner: aap
+            group: aap
+
+        - name: Extract tarball
+          ansible.builtin.unarchive:
+            src: "/home/aap/{{ aap_installer_bundle }}.tar.gz"
+            dest: /home/aap/
+            remote_src: true
+            owner: aap
+            group: aap
+
+    - name: Install ansible collections
+      ansible.builtin.command:
+        cmd: ansible-galaxy collection install .
+        chdir: "{{ aap_installer_path }}"
+      changed_when: true
+
+    - name: Generate inventory file from wizard config
+      ansible.builtin.template:
+        src: inventory-growth.j2
+        dest: "{{ aap_installer_path }}/inventory-wizard"
+        owner: aap
+        group: aap
+        mode: "0600"
+
+    - name: Run AAP containerized installer
+      ansible.builtin.command:
+        cmd: >
+          ansible-playbook -i inventory-wizard
+          ansible.containerized_installer.install
+        chdir: "{{ aap_installer_path }}"
+      environment:
+        ANSIBLE_CONFIG: "{{ aap_installer_path }}/ansible.cfg"
+      register: install_result
+      changed_when: true
+      timeout: 3600
+
+    - name: Display install result
+      ansible.builtin.debug:
+        msg: |
+          AAP Installation {{ 'SUCCEEDED' if install_result.rc == 0 else 'FAILED' }}!
+          Access the platform at: https://{{ aap_gateway_host }}
+          Admin user: admin
+          Admin password: (set in wizard)
+
+    - name: Wait for Gateway to be reachable
+      ansible.builtin.uri:
+        url: "https://{{ aap_gateway_host }}/api/gateway/v1/ping/"
+        validate_certs: false
+        status_code: 200
+      register: gateway_check
+      retries: 30
+      delay: 10
+      until: gateway_check.status == 200
+      ignore_errors: true
+
+    - name: Final status
+      ansible.builtin.debug:
+        msg: |
+          AAP 2.6 is {{ 'UP AND RUNNING' if gateway_check.status | default(0) == 200 else 'still starting (check in a few minutes)' }}
+          URL: https://{{ aap_gateway_host }}

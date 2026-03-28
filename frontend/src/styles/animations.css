@@ -1,0 +1,521 @@
+/* ==========================================================================
+   AAP Deployment Wizard — Animation & Transition Utilities
+   Uses cubic-bezier timing, will-change hints, respects prefers-reduced-motion
+   ========================================================================== */
+
+:root {
+  --aap-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --aap-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --aap-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --aap-duration-fast: 150ms;
+  --aap-duration-default: 250ms;
+  --aap-duration-slow: 400ms;
+}
+
+/* --------------------------------------------------------------------------
+   Step transitions
+   -------------------------------------------------------------------------- */
+.aap-slide-in-right {
+  animation: aapSlideInRight var(--aap-duration-default) var(--aap-ease-out-expo) forwards;
+  will-change: transform, opacity;
+}
+
+.aap-slide-in-left {
+  animation: aapSlideInLeft var(--aap-duration-default) var(--aap-ease-out-expo) forwards;
+  will-change: transform, opacity;
+}
+
+.aap-slide-out-right {
+  animation: aapSlideOutRight var(--aap-duration-default) var(--aap-ease-in-out) forwards;
+  will-change: transform, opacity;
+}
+
+.aap-slide-out-left {
+  animation: aapSlideOutLeft var(--aap-duration-default) var(--aap-ease-in-out) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes aapSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes aapSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes aapSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes aapSlideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Fade animations
+   -------------------------------------------------------------------------- */
+.aap-fade-in {
+  animation: aapFadeIn var(--aap-duration-default) var(--aap-ease-in-out) forwards;
+  will-change: opacity;
+}
+
+.aap-fade-out {
+  animation: aapFadeOut var(--aap-duration-default) var(--aap-ease-in-out) forwards;
+  will-change: opacity;
+}
+
+.aap-fade-in-up {
+  animation: aapFadeInUp var(--aap-duration-default) var(--aap-ease-out-expo) forwards;
+  will-change: transform, opacity;
+}
+
+.aap-fade-in-down {
+  animation: aapFadeInDown var(--aap-duration-default) var(--aap-ease-out-expo) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes aapFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes aapFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes aapFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aapFadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Scale animations
+   -------------------------------------------------------------------------- */
+.aap-scale-in {
+  animation: aapScaleIn var(--aap-duration-default) var(--aap-ease-spring) forwards;
+  will-change: transform, opacity;
+}
+
+.aap-scale-out {
+  animation: aapScaleOut var(--aap-duration-default) var(--aap-ease-in-out) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes aapScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes aapScaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Skeleton loading
+   -------------------------------------------------------------------------- */
+.aap-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--aap-border-subtle, #2a2d31) 25%,
+    var(--aap-border-default, #3c3f42) 50%,
+    var(--aap-border-subtle, #2a2d31) 75%
+  );
+  background-size: 200% 100%;
+  animation: aapSkeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: var(--aap-radius-sm, 4px);
+  will-change: background-position;
+}
+
+.aap-skeleton--text {
+  height: 1em;
+  min-width: 60px;
+}
+
+.aap-skeleton--circle {
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+
+.aap-skeleton--rect {
+  min-height: 48px;
+}
+
+@keyframes aapSkeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Pulse / glow for active elements
+   -------------------------------------------------------------------------- */
+.aap-pulse {
+  animation: aapPulse 2s var(--aap-ease-in-out) infinite;
+  will-change: opacity;
+}
+
+.aap-glow {
+  animation: aapGlow 2s ease-in-out infinite;
+  will-change: box-shadow;
+}
+
+.aap-glow--success {
+  animation-name: aapGlowSuccess;
+}
+
+.aap-glow--danger {
+  animation-name: aapGlowDanger;
+}
+
+.aap-glow--info {
+  animation-name: aapGlowInfo;
+}
+
+@keyframes aapPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes aapGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(238, 0, 0, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(238, 0, 0, 0.1); }
+}
+
+@keyframes aapGlowSuccess {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(91, 163, 82, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(91, 163, 82, 0.1); }
+}
+
+@keyframes aapGlowDanger {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 25, 11, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(201, 25, 11, 0.1); }
+}
+
+@keyframes aapGlowInfo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(43, 154, 243, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(43, 154, 243, 0.1); }
+}
+
+/* --------------------------------------------------------------------------
+   Stagger animations for lists
+   -------------------------------------------------------------------------- */
+.aap-stagger-item {
+  animation: aapFadeInUp var(--aap-duration-default) var(--aap-ease-out-expo) both;
+  will-change: transform, opacity;
+}
+
+.aap-stagger-item:nth-child(1) { animation-delay: 0ms; }
+.aap-stagger-item:nth-child(2) { animation-delay: 50ms; }
+.aap-stagger-item:nth-child(3) { animation-delay: 100ms; }
+.aap-stagger-item:nth-child(4) { animation-delay: 150ms; }
+.aap-stagger-item:nth-child(5) { animation-delay: 200ms; }
+.aap-stagger-item:nth-child(6) { animation-delay: 250ms; }
+.aap-stagger-item:nth-child(7) { animation-delay: 300ms; }
+.aap-stagger-item:nth-child(8) { animation-delay: 350ms; }
+.aap-stagger-item:nth-child(9) { animation-delay: 400ms; }
+.aap-stagger-item:nth-child(10) { animation-delay: 450ms; }
+.aap-stagger-item:nth-child(11) { animation-delay: 500ms; }
+.aap-stagger-item:nth-child(12) { animation-delay: 550ms; }
+.aap-stagger-item:nth-child(13) { animation-delay: 600ms; }
+.aap-stagger-item:nth-child(14) { animation-delay: 650ms; }
+.aap-stagger-item:nth-child(15) { animation-delay: 700ms; }
+.aap-stagger-item:nth-child(16) { animation-delay: 750ms; }
+.aap-stagger-item:nth-child(17) { animation-delay: 800ms; }
+.aap-stagger-item:nth-child(18) { animation-delay: 850ms; }
+.aap-stagger-item:nth-child(19) { animation-delay: 900ms; }
+.aap-stagger-item:nth-child(20) { animation-delay: 950ms; }
+
+/* --------------------------------------------------------------------------
+   Accordion / collapse
+   -------------------------------------------------------------------------- */
+.aap-collapse {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--aap-duration-default) var(--aap-ease-in-out);
+  will-change: max-height;
+}
+
+.aap-collapse--open {
+  max-height: 2000px;
+}
+
+/* --------------------------------------------------------------------------
+   Slide panel
+   -------------------------------------------------------------------------- */
+.aap-panel-slide {
+  transform: translateX(100%);
+  transition: transform var(--aap-duration-default) var(--aap-ease-out-expo);
+  will-change: transform;
+}
+
+.aap-panel-slide--open {
+  transform: translateX(0);
+}
+
+/* --------------------------------------------------------------------------
+   Tooltip
+   -------------------------------------------------------------------------- */
+.aap-tooltip {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity var(--aap-duration-fast) ease, transform var(--aap-duration-fast) ease, visibility var(--aap-duration-fast);
+  will-change: opacity, transform;
+}
+
+.aap-tooltip--visible,
+.aap-tooltip:hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.aap-tooltip--top {
+  transform: translateY(-4px);
+}
+
+.aap-tooltip--top.aap-tooltip--visible,
+.aap-tooltip--top:hover {
+  transform: translateY(0);
+}
+
+.aap-tooltip--bottom {
+  transform: translateY(4px);
+}
+
+.aap-tooltip--bottom.aap-tooltip--visible,
+.aap-tooltip--bottom:hover {
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   Focus ring animation
+   -------------------------------------------------------------------------- */
+.aap-focus-ring {
+  outline: none;
+  transition: box-shadow var(--aap-duration-fast) ease;
+}
+
+.aap-focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--aap-border-focus, #2b9af3);
+}
+
+/* --------------------------------------------------------------------------
+   Progress shimmer
+   -------------------------------------------------------------------------- */
+.aap-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: aapShimmer 1.5s ease-in-out infinite;
+  will-change: background-position;
+}
+
+@keyframes aapShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Notification entrance / exit
+   -------------------------------------------------------------------------- */
+.aap-notification-enter {
+  animation: aapNotificationEnter var(--aap-duration-default) var(--aap-ease-out-expo) forwards;
+  will-change: transform, opacity;
+}
+
+.aap-notification-exit {
+  animation: aapNotificationExit var(--aap-duration-default) var(--aap-ease-in-out) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes aapNotificationEnter {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes aapNotificationExit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Shake for validation errors
+   -------------------------------------------------------------------------- */
+.aap-shake {
+  animation: aapShake 0.5s var(--aap-ease-in-out);
+  will-change: transform;
+}
+
+@keyframes aapShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* --------------------------------------------------------------------------
+   Typewriter effect for log console
+   -------------------------------------------------------------------------- */
+.aap-typewriter {
+  overflow: hidden;
+  border-right: 2px solid var(--aap-text-muted, #6a6e73);
+  white-space: nowrap;
+  animation: aapTypewriter 1s steps(40) forwards, aapBlink 0.75s step-end infinite;
+  width: 0;
+  will-change: width;
+}
+
+@keyframes aapTypewriter {
+  to { width: 100%; }
+}
+
+@keyframes aapBlink {
+  50% { border-color: transparent; }
+}
+
+/* --------------------------------------------------------------------------
+   Floating action button
+   -------------------------------------------------------------------------- */
+.aap-fab {
+  transition: transform var(--aap-duration-default) var(--aap-ease-spring), box-shadow var(--aap-duration-default) ease;
+  will-change: transform;
+}
+
+.aap-fab:hover {
+  transform: scale(1.05);
+  box-shadow: var(--aap-shadow-lg, 0 4px 16px rgba(0, 0, 0, 0.35));
+}
+
+/* --------------------------------------------------------------------------
+   Card hover lift
+   -------------------------------------------------------------------------- */
+.aap-card-hover-lift {
+  transition: transform var(--aap-duration-default) var(--aap-ease-out-expo), box-shadow var(--aap-duration-default) ease;
+  will-change: transform;
+}
+
+.aap-card-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--aap-shadow-lg, 0 4px 16px rgba(0, 0, 0, 0.35));
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion support
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .aap-slide-in-right,
+  .aap-slide-in-left,
+  .aap-slide-out-right,
+  .aap-slide-out-left,
+  .aap-fade-in,
+  .aap-fade-out,
+  .aap-fade-in-up,
+  .aap-fade-in-down,
+  .aap-scale-in,
+  .aap-scale-out,
+  .aap-skeleton,
+  .aap-pulse,
+  .aap-glow,
+  .aap-glow--success,
+  .aap-glow--danger,
+  .aap-glow--info,
+  .aap-stagger-item,
+  .aap-shimmer,
+  .aap-notification-enter,
+  .aap-notification-exit,
+  .aap-shake,
+  .aap-typewriter {
+    animation: none !important;
+  }
+
+  .aap-collapse,
+  .aap-panel-slide,
+  .aap-tooltip,
+  .aap-focus-ring,
+  .aap-fab,
+  .aap-card-hover-lift {
+    transition: none !important;
+  }
+
+  .aap-fab:hover {
+    transform: none;
+  }
+
+  .aap-card-hover-lift:hover {
+    transform: none;
+  }
+}

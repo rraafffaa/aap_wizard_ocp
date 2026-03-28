@@ -1,0 +1,220 @@
+---
+# ============================================================
+# Provision Azure VM for AAP 2.6
+# Requirements: ansible-galaxy collection install azure.azcollection
+#               pip install azure-identity azure-mgmt-resource azure-mgmt-compute azure-mgmt-network
+#               az login (Azure CLI authenticated)
+# Usage: ansible-playbook playbooks/01-provision-azure-vm.yml
+# ============================================================
+
+- name: Provision Azure RHEL VM for AAP 2.6
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Create resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ azure_resource_group }}"
+        location: "{{ azure_location }}"
+        tags:
+          project: aap-wizard-demo
+          purpose: aap-deployment
+
+    - name: Create virtual network
+      azure.azcollection.azure_rm_virtualnetwork:
+        resource_group: "{{ azure_resource_group }}"
+        name: "{{ azure_vnet_name }}"
+        address_prefixes: "10.0.0.0/16"
+
+    - name: Create subnet
+      azure.azcollection.azure_rm_subnet:
+        resource_group: "{{ azure_resource_group }}"
+        virtual_network: "{{ azure_vnet_name }}"
+        name: "{{ azure_subnet_name }}"
+        address_prefix: "10.0.1.0/24"
+
+    - name: Create public IP
+      azure.azcollection.azure_rm_publicipaddress:
+        resource_group: "{{ azure_resource_group }}"
+        name: "{{ azure_public_ip_name }}"
+        allocation_method: Static
+        sku: Standard
+        domain_name: "{{ azure_vm_name }}"
+      register: public_ip
+
+    - name: Create network security group
+      azure.azcollection.azure_rm_securitygroup:
+        resource_group: "{{ azure_resource_group }}"
+        name: "{{ azure_nsg_name }}"
+        rules:
+          - name: SSH
+            protocol: Tcp
+            destination_port_range: 22
+            access: Allow
+            priority: 100
+            direction: Inbound
+          - name: HTTPS
+            protocol: Tcp
+            destination_port_range: 443
+            access: Allow
+            priority: 200
+            direction: Inbound
+          - name: HTTP
+            protocol: Tcp
+            destination_port_range: 80
+            access: Allow
+            priority: 300
+            direction: Inbound
+          - name: Receptor
+            protocol: Tcp
+            destination_port_range: 27199
+            access: Allow
+            priority: 400
+            direction: Inbound
+
+    - name: Create NIC
+      azure.azcollection.azure_rm_networkinterface:
+        resource_group: "{{ azure_resource_group }}"
+        name: "{{ azure_vm_name }}-nic"
+        virtual_network: "{{ azure_vnet_name }}"
+        subnet: "{{ azure_subnet_name }}"
+        public_ip_name: "{{ azure_public_ip_name }}"
+        security_group: "{{ azure_nsg_name }}"
+
+    - name: Create RHEL 9.4 VM
+      azure.azcollection.azure_rm_virtualmachine:
+        resource_group: "{{ azure_resource_group }}"
+        name: "{{ azure_vm_name }}"
+        vm_size: "{{ azure_vm_size }}"
+        admin_username: "{{ azure_vm_admin_user }}"
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: "/home/{{ azure_vm_admin_user }}/.ssh/authorized_keys"
+            key_data: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        network_interfaces: "{{ azure_vm_name }}-nic"
+        image: "{{ azure_vm_image }}"
+        os_disk_size_gb: "{{ azure_vm_os_disk_size_gb }}"
+        managed_disk_type: Premium_LRS
+        data_disks:
+          - lun: 0
+            disk_size_gb: "{{ azure_vm_data_disk_size_gb }}"
+            managed_disk_type: Premium_LRS
+        tags:
+          project: aap-wizard-demo
+
+    - name: Get VM public IP
+      azure.azcollection.azure_rm_publicipaddress_info:
+        resource_group: "{{ azure_resource_group }}"
+        name: "{{ azure_public_ip_name }}"
+      register: pip_info
+
+    - name: Display connection info
+      ansible.builtin.debug:
+        msg: |
+          VM provisioned successfully!
+          Public IP: {{ pip_info.publicipaddresses[0].ip_address }}
+          FQDN: {{ azure_vm_name }}.{{ azure_location }}.cloudapp.azure.com
+          SSH: ssh {{ azure_vm_admin_user }}@{{ pip_info.publicipaddresses[0].ip_address }}
+
+    - name: Add VM to inventory
+      ansible.builtin.add_host:
+        name: "{{ pip_info.publicipaddresses[0].ip_address }}"
+        groups: aap_target
+        ansible_user: "{{ azure_vm_admin_user }}"
+        ansible_ssh_private_key_file: "~/.ssh/id_rsa"
+
+    - name: Save VM IP to file
+      ansible.builtin.copy:
+        content: |
+          [aap_target]
+          {{ pip_info.publicipaddresses[0].ip_address }} ansible_user={{ azure_vm_admin_user }}
+        dest: "{{ playbook_dir }}/inventory_azure.ini"
+
+    - name: Wait for SSH
+      ansible.builtin.wait_for:
+        host: "{{ pip_info.publicipaddresses[0].ip_address }}"
+        port: 22
+        timeout: 300
+
+- name: Prepare RHEL VM for AAP
+  hosts: aap_target
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Register with RHEL subscription
+      community.general.redhat_subscription:
+        state: present
+        auto_attach: true
+      ignore_errors: true
+
+    - name: Mount data disk
+      ansible.posix.mount:
+        path: /opt/aap
+        src: /dev/sdc
+        fstype: xfs
+        state: mounted
+        opts: defaults
+      ignore_errors: true
+
+    - name: Format data disk if needed
+      ansible.builtin.shell: |
+        if ! blkid /dev/sdc; then
+          mkfs.xfs /dev/sdc
+          mount /dev/sdc /opt/aap
+          echo "/dev/sdc /opt/aap xfs defaults 0 0" >> /etc/fstab
+        fi
+      args:
+        creates: /opt/aap/lost+found
+
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name:
+          - ansible-core
+          - podman
+          - git
+          - python3-pip
+          - firewalld
+        state: present
+
+    - name: Start and enable firewalld
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Open firewall ports
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop:
+        - 443/tcp
+        - 80/tcp
+        - 27199/tcp
+
+    - name: Create aap user
+      ansible.builtin.user:
+        name: aap
+        groups: wheel
+        append: true
+        create_home: true
+
+    - name: Allow aap user passwordless sudo
+      ansible.builtin.copy:
+        content: "aap ALL=(ALL) NOPASSWD: ALL\n"
+        dest: /etc/sudoers.d/aap
+        mode: "0440"
+
+    - name: Enable lingering for aap user (rootless podman)
+      ansible.builtin.command: loginctl enable-linger aap
+      changed_when: true
+
+    - name: Display readiness
+      ansible.builtin.debug:
+        msg: |
+          VM is ready for AAP 2.6 installation!
+          Run the wizard and point it at: {{ inventory_hostname }}
+          User: aap

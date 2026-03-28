@@ -1,0 +1,10 @@
+.git
+.venv
+backend/venv
+frontend/node_modules
+ansible-automation-platform-containerized-setup-2.6-6
+playbooks
+__pycache__
+.pytest_cache
+deploy
+*.md

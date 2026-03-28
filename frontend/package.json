@@ -1,0 +1,75 @@
+{
+  "name": "aap-deployment-wizard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "author": "Red Hat",
+  "description": "AAP 2.6 Containerized Deployment Wizard",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "electron:dev": "concurrently -k \"vite --port 5173\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "tsc && vite build && electron-builder",
+    "electron:build:mac": "tsc && vite build && electron-builder --mac",
+    "electron:build:win": "tsc && vite build && electron-builder --win",
+    "electron:build:linux": "tsc && vite build && electron-builder --linux",
+    "postinstall": "node -e \"const fs=require('fs'),p=require('path'),plist=p.join('node_modules','electron','dist','Electron.app','Contents','Info.plist'),icon=p.join('build','icon.icns'),res=p.join('node_modules','electron','dist','Electron.app','Contents','Resources','electron.icns');if(process.platform==='darwin'&&fs.existsSync(plist)){const{execSync}=require('child_process');execSync('plutil -replace CFBundleName -string \\\"AAP Wizard\\\" '+plist);execSync('plutil -replace CFBundleDisplayName -string \\\"AAP Wizard\\\" '+plist);if(fs.existsSync(icon))fs.copyFileSync(icon,res);console.log('Patched Electron.app for AAP Wizard')}\""
+  },
+  "dependencies": {
+    "@patternfly/patternfly": "^6.1.0",
+    "@patternfly/react-core": "^6.1.0",
+    "@patternfly/react-icons": "^6.1.0",
+    "@patternfly/react-styles": "^6.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "electron": "^35.1.2",
+    "electron-builder": "^26.0.12",
+    "jsdom": "^28.1.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^4.0.18",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.redhat.aap-wizard",
+    "productName": "AAP Wizard",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

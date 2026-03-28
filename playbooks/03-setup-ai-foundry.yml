@@ -1,0 +1,97 @@
+---
+# ============================================================
+# Set up Azure AI Foundry endpoint for Ansible Lightspeed (ALIA)
+# Requirements: az login, azure-cli with ai extension
+#               pip install azure-identity azure-mgmt-cognitiveservices
+# Usage: ansible-playbook playbooks/03-setup-ai-foundry.yml
+# ============================================================
+
+- name: Set up Azure AI Foundry for ALIA
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Create AI Foundry account (Azure AI Services)
+      ansible.builtin.command:
+        cmd: >
+          az cognitiveservices account create
+          --name {{ ai_foundry_account_name }}
+          --resource-group {{ ai_foundry_resource_group }}
+          --location {{ ai_foundry_location }}
+          --kind AIServices
+          --sku S0
+          --yes
+      register: ai_account
+      changed_when: ai_account.rc == 0
+
+    - name: Create model deployment (GPT-4o for ALIA)
+      ansible.builtin.command:
+        cmd: >
+          az cognitiveservices account deployment create
+          --name {{ ai_foundry_account_name }}
+          --resource-group {{ ai_foundry_resource_group }}
+          --deployment-name {{ ai_foundry_deployment_name }}
+          --model-name {{ ai_foundry_model_name }}
+          --model-version {{ ai_foundry_model_version }}
+          --model-format OpenAI
+          --sku-capacity {{ ai_foundry_sku_capacity }}
+          --sku-name Standard
+      register: deployment
+      changed_when: deployment.rc == 0
+
+    - name: Get endpoint URL
+      ansible.builtin.command:
+        cmd: >
+          az cognitiveservices account show
+          --name {{ ai_foundry_account_name }}
+          --resource-group {{ ai_foundry_resource_group }}
+          --query "properties.endpoint" -o tsv
+      register: endpoint_url
+      changed_when: false
+
+    - name: Get API key
+      ansible.builtin.command:
+        cmd: >
+          az cognitiveservices account keys list
+          --name {{ ai_foundry_account_name }}
+          --resource-group {{ ai_foundry_resource_group }}
+          --query "key1" -o tsv
+      register: api_key
+      changed_when: false
+
+    - name: Display AI Foundry configuration
+      ansible.builtin.debug:
+        msg: |
+          ======================================
+          Azure AI Foundry - ALIA Configuration
+          ======================================
+
+          Endpoint URL: {{ endpoint_url.stdout }}
+          API Key: {{ api_key.stdout }}
+          Deployment: {{ ai_foundry_deployment_name }}
+          Model: {{ ai_foundry_model_name }} ({{ ai_foundry_model_version }})
+
+          To configure in AAP Lightspeed:
+          1. Log into AAP Gateway: https://{{ aap_gateway_host }}
+          2. Navigate to Settings > Ansible Lightspeed
+          3. Set Model URL: {{ endpoint_url.stdout }}
+          4. Set API Key: {{ api_key.stdout }}
+          5. Set Model ID: {{ ai_foundry_deployment_name }}
+
+          Or use these AAP inventory variables:
+            lightspeed_chatbot_default_provider=azure
+            lightspeed_chatbot_model_url={{ endpoint_url.stdout }}
+            lightspeed_chatbot_model_api_key={{ api_key.stdout }}
+            lightspeed_chatbot_model_id={{ ai_foundry_deployment_name }}
+
+    - name: Save config to file
+      ansible.builtin.copy:
+        content: |
+          # Azure AI Foundry - ALIA Configuration
+          AI_FOUNDRY_ENDPOINT={{ endpoint_url.stdout }}
+          AI_FOUNDRY_API_KEY={{ api_key.stdout }}
+          AI_FOUNDRY_DEPLOYMENT={{ ai_foundry_deployment_name }}
+          AI_FOUNDRY_MODEL={{ ai_foundry_model_name }}
+        dest: "{{ playbook_dir }}/ai_foundry_config.env"
+        mode: "0600"
