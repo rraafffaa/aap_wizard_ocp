@@ -90,9 +90,9 @@ def default_config() -> dict:
         "install_dir": "/opt/aap",
         "eula_accepted": True,
         "dry_run": False,
-        "target_host": "",
+        "target_host": "aap.example.org",
         "target_user": "aap",
-        "target_password": "",
+        "target_password": "testpass",
         "target_ssh_port": 22,
     }
 

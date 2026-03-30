@@ -1,43 +1,82 @@
+import { useState, useEffect, useMemo } from 'react';
 import { en } from './en';
+import { ja } from './ja';
 
-type Locale = 'en';
+export type Locale = 'en' | 'ja' | 'ko' | 'zh' | 'es';
 
-const locales: Record<string, Record<string, any>> = { en };
-let currentLocale: Locale = 'en';
+export const LOCALE_LABELS: Record<Locale, string> = {
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+  zh: '中文',
+  es: 'Español',
+};
 
-export function setLocale(locale: string): void {
-  if (locales[locale]) {
-    currentLocale = locale as Locale;
-  }
-}
+export const DEFAULT_LOCALE: Locale = 'en';
+const STORAGE_KEY = 'aap_wizard_locale';
 
-export function getLocale(): string {
-  return currentLocale;
-}
+type TranslationDict = Record<string, string>;
 
-function resolve(obj: Record<string, any>, key: string): string | undefined {
-  const parts = key.split('.');
-  let current: any = obj;
-  for (const part of parts) {
-    if (current == null || typeof current !== 'object') return undefined;
-    current = current[part];
-  }
-  return typeof current === 'string' ? current : undefined;
-}
+const translations: Record<Locale, TranslationDict> = {
+  en,
+  ja,
+  ko: en, // Fallback to English for now
+  zh: en, // Fallback to English for now
+  es: en, // Fallback to English for now
+};
 
-export function t(key: string, params?: Record<string, string | number>): string {
-  const dict = locales[currentLocale] ?? locales.en;
-  let value = resolve(dict, key);
-
-  if (value === undefined) return key;
-
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      value = value!.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+function getStoredLocale(): Locale {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY) as Locale;
+    if (stored && Object.keys(LOCALE_LABELS).includes(stored)) {
+      return stored;
     }
+  } catch {
+    // localStorage may not be available
   }
-
-  return value!;
+  return DEFAULT_LOCALE;
 }
 
-export { en } from './en';
+function setStoredLocale(locale: Locale): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, locale);
+  } catch {
+    // localStorage may not be available
+  }
+}
+
+export function useI18n() {
+  const [locale, setLocaleState] = useState<Locale>(getStoredLocale);
+
+  useEffect(() => {
+    setStoredLocale(locale);
+  }, [locale]);
+
+  const t = useMemo(() => {
+    return (key: string, params?: Record<string, string>): string => {
+      let text = translations[locale]?.[key] || translations[DEFAULT_LOCALE]?.[key] || key;
+
+      // Replace {param} placeholders with values
+      if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+          text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+        });
+      }
+
+      return text;
+    };
+  }, [locale]);
+
+  const setLocale = (newLocale: Locale) => {
+    setLocaleState(newLocale);
+  };
+
+  const locales = useMemo(() => {
+    return Object.entries(LOCALE_LABELS).map(([code, label]) => ({
+      code: code as Locale,
+      label,
+    }));
+  }, []);
+
+  return { t, locale, setLocale, locales };
+}

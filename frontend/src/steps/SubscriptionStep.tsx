@@ -69,25 +69,36 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
         <div className="aap-card aap-mt-lg">
           <h3 className="aap-card__title">Registry Credentials</h3>
           <p className="aap-card__description aap-mb-md">
-            Using your login credentials for <code>registry.redhat.io</code>.
-            You can override them below if needed.
+            Enter your <code>registry.redhat.io</code> credentials.
+            These are required to pull AAP container images during installation.
           </p>
           <div className="aap-form-row">
             <FormField label="Registry Username" required>
               <TextInput
                 value={config.registry.username}
                 onChange={(v) => updateConfig({ registry: { ...config.registry, username: v } })}
-                placeholder="Registry username or token name"
+                placeholder="Your registry.redhat.io username"
               />
             </FormField>
             <FormField label="Registry Password" required>
               <TextInput
                 value={config.registry.password}
                 onChange={(v) => updateConfig({ registry: { ...config.registry, password: v } })}
-                placeholder="Registry password or token"
+                placeholder="Your registry.redhat.io password or token"
                 type="password"
               />
             </FormField>
+          </div>
+          <div className="aap-alert aap-alert--info aap-mt-md">
+            <span className="aap-alert__icon" aria-hidden><InfoCircleIcon /></span>
+            <div className="aap-alert__content">
+              <span className="aap-text-sm">
+                Don't have credentials? Create a service account at{' '}
+                <a href="https://access.redhat.com/terms-based-registry/" target="_blank" rel="noopener noreferrer">
+                  access.redhat.com/terms-based-registry
+                </a>
+              </span>
+            </div>
           </div>
         </div>
       )}

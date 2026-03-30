@@ -6,10 +6,12 @@ import {
   SpinnerIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  ExportIcon,
+  AngleDownIcon,
 } from '@patternfly/react-icons';
 import type { DeploymentConfig } from '../types';
 import { downloadTextFile } from '../types';
-import { startDeploy, cancelDeploy, getDeployStatus, connectDeployWebSocket, diagnoseError, type AIDiagnosis } from '../api';
+import { startDeploy, cancelDeploy, getDeployStatus, connectDeployWebSocket, diagnoseError, generateInventory, generateCRYaml, type AIDiagnosis } from '../api';
 
 interface Props {
   config: DeploymentConfig;
@@ -34,6 +36,18 @@ export const INITIAL_PHASES: Phase[] = [
   { id: 'install', label: 'Running AAP installer playbook', status: 'pending' },
   { id: 'post_install', label: 'Post-install validation', status: 'pending' },
   { id: 'complete', label: 'Deployment complete', status: 'pending' },
+];
+
+export const OCP_PHASES: Phase[] = [
+  { id: 'connecting', label: 'Connecting to cluster', status: 'pending' },
+  { id: 'namespace', label: 'Creating namespace', status: 'pending' },
+  { id: 'operator_check', label: 'Checking for AAP operator', status: 'pending' },
+  { id: 'operator_install', label: 'Installing AAP operator', status: 'pending' },
+  { id: 'operator_wait', label: 'Waiting for operator readiness', status: 'pending' },
+  { id: 'cr_apply', label: 'Applying AnsibleAutomationPlatform CR', status: 'pending' },
+  { id: 'reconciliation', label: 'Waiting for AAP reconciliation', status: 'pending' },
+  { id: 'routes', label: 'Retrieving access routes', status: 'pending' },
+  { id: 'validation', label: 'Validating deployment', status: 'pending' },
 ];
 
 type Status = 'idle' | 'running' | 'completed' | 'failed' | 'cancelled';
@@ -105,7 +119,16 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
       if (st.log_lines?.length) {
         setLogLines(st.log_lines);
       }
-      if (st.status === 'completed') {
+      if (st.current_phase) {
+        setPhases(prev => prev.map(p => {
+          const phaseIdx = prev.findIndex(ph => ph.id === p.id);
+          const currentIdx = prev.findIndex(ph => ph.id === st.current_phase);
+          if (phaseIdx < currentIdx) return { ...p, status: 'complete' };
+          if (phaseIdx === currentIdx) return { ...p, status: 'running' };
+          return p;
+        }));
+      }
+      if (st.status === 'completed' || st.status === 'success') {
         setStatus('completed');
         setProgress(100);
         setPhases(prev => prev.map(p => ({ ...p, status: 'complete' })));
@@ -118,8 +141,27 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
         setStatus('cancelled');
         if (pollRef.current) clearInterval(pollRef.current);
       }
-    } catch {
-      // backend unreachable, keep polling
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('Session not found') || msg.includes('404')) {
+        // Session gone — check if deployment had already finished
+        setLogLines(prev => {
+          const alreadyDone = prev.some(
+            l => l.includes('Deployment — Complete') || l.includes('[PROGRESS] 100%'),
+          );
+          if (alreadyDone) {
+            setStatus('completed');
+            setProgress(100);
+            setPhases(p => p.map(ph => ({ ...ph, status: 'complete' })));
+          } else {
+            setStatus('failed');
+            setError('Deployment session lost — backend may have restarted. Check cluster status manually.');
+          }
+          if (pollRef.current) clearInterval(pollRef.current);
+          return prev; // no mutation
+        });
+      }
+      // For other errors, keep polling (backend temporarily unreachable)
     }
   }, []);
 
@@ -144,6 +186,7 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
       case 'complete':
         setStatus('completed');
         setProgress(100);
+        if (pollRef.current) clearInterval(pollRef.current);
         break;
       case 'error':
         setStatus('failed');
@@ -156,10 +199,20 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
     }
   }, []);
 
+  const isOCP = config.platform === 'openshift';
+  const initialPhases = isOCP ? OCP_PHASES : INITIAL_PHASES;
+
   const handleStart = async () => {
+    // Pre-flight validation before starting deploy
+    if (isOCP && !config.ocp.token) {
+      setStatus('failed');
+      setError('OCP authentication token is missing. Go back to the Cluster Connection step and re-enter your token.');
+      return;
+    }
+
     setStatus('running');
     setLogLines([]);
-    setPhases(INITIAL_PHASES.map(p => ({ ...p, status: 'pending' })));
+    setPhases(initialPhases.map(p => ({ ...p, status: 'pending' })));
     setError('');
     setProgress(0);
     setWsConnected(false);
@@ -243,9 +296,151 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
     }
   }, [status]);
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExportMenu]);
+
+  const buildLogContent = () => {
+    const header = [
+      `AAP Deployment ${status === 'failed' ? 'FAILED' : status === 'completed' ? 'SUCCESS' : status.toUpperCase()} Log`,
+      `Session: ${sessionId || 'N/A'}`,
+      `Date: ${new Date().toISOString()}`,
+      `Target: ${config.target_host}`,
+      `Topology: ${config.topology}`,
+      `Progress: ${progress}%`,
+      '─'.repeat(60),
+      '',
+    ].join('\n');
+    return header + logLines.join('\n');
+  };
+
   const handleExportLogs = () => {
-    const content = logLines.join('\n');
-    downloadTextFile(content, `aap-deploy-${sessionId || 'logs'}.txt`);
+    downloadTextFile(buildLogContent(), `aap-deploy-${sessionId || 'logs'}.txt`);
+    setShowExportMenu(false);
+  };
+
+  const handleExportInventory = async () => {
+    try {
+      const data = await generateInventory(config);
+      downloadTextFile(data.inventory, `aap-inventory-${sessionId || 'config'}.ini`);
+    } catch {
+      downloadTextFile(
+        '# Inventory generation requires the backend to be running.\n# Export the config JSON from the header instead.',
+        'aap-inventory-unavailable.ini',
+      );
+    }
+    setShowExportMenu(false);
+  };
+
+  const handleExportBundle = async () => {
+    const sections: string[] = [];
+
+    // Header
+    const headerLines = [
+      '╔══════════════════════════════════════════════╗',
+      '║   AAP DEPLOYMENT BUNDLE                      ║',
+      '╚══════════════════════════════════════════════╝',
+      '',
+      `Session:   ${sessionId || 'N/A'}`,
+      `Date:      ${new Date().toISOString()}`,
+    ];
+    if (isOCP) {
+      headerLines.push(`Cluster:   ${config.ocp.api_url}`);
+      headerLines.push(`Namespace: ${config.ocp.namespace}`);
+      headerLines.push(`Platform:  OpenShift (Operator)`);
+    } else {
+      headerLines.push(`Target:    ${config.target_host}`);
+      headerLines.push(`Topology:  ${config.topology === 'growth' ? 'Growth (All-in-One)' : 'Enterprise'}`);
+      headerLines.push(`Platform:  Containerized (RHEL)`);
+    }
+    headerLines.push(`Status:    ${status}`);
+    headerLines.push(`Progress:  ${progress}%`);
+    headerLines.push('');
+    sections.push(headerLines.join('\n'));
+
+    // Inventory or CR section depending on platform
+    if (isOCP) {
+      sections.push('═'.repeat(60));
+      sections.push('SECTION: CUSTOM RESOURCE (CR)');
+      sections.push('═'.repeat(60));
+      sections.push('');
+      try {
+        const data = await generateCRYaml(config);
+        sections.push(data.yaml);
+      } catch {
+        sections.push('# CR generation unavailable — backend not running');
+      }
+      sections.push('');
+    } else {
+      sections.push('═'.repeat(60));
+      sections.push('SECTION: INVENTORY FILE');
+      sections.push('═'.repeat(60));
+      sections.push('');
+      try {
+        const data = await generateInventory(config);
+        sections.push(data.inventory);
+      } catch {
+        sections.push('# Inventory unavailable — backend not running');
+      }
+      sections.push('');
+    }
+
+    // Deploy logs section
+    sections.push('═'.repeat(60));
+    sections.push(`SECTION: DEPLOYMENT LOG (${logLines.length} lines)`);
+    sections.push('═'.repeat(60));
+    sections.push('');
+    sections.push(logLines.join('\n'));
+    sections.push('');
+
+    // Warnings/errors summary
+    const warnings = logLines.filter(l => l.includes('[WARN]') || l.includes('warning'));
+    const errors = logLines.filter(l => l.includes('[ERROR]') || l.includes('FAILED') || l.includes('fatal'));
+    if (warnings.length > 0 || errors.length > 0) {
+      sections.push('═'.repeat(60));
+      sections.push('SECTION: WARNINGS & ERRORS SUMMARY');
+      sections.push('═'.repeat(60));
+      sections.push('');
+      if (errors.length > 0) {
+        sections.push(`ERRORS (${errors.length}):`);
+        errors.forEach(e => sections.push(`  ✗ ${e.trim()}`));
+        sections.push('');
+      }
+      if (warnings.length > 0) {
+        sections.push(`WARNINGS (${warnings.length}):`);
+        warnings.forEach(w => sections.push(`  ⚠ ${w.trim()}`));
+        sections.push('');
+      }
+    }
+
+    // AI Diagnosis if available
+    if (aiDiagnosis) {
+      sections.push('═'.repeat(60));
+      sections.push('SECTION: AI DIAGNOSIS');
+      sections.push('═'.repeat(60));
+      sections.push('');
+      sections.push(aiDiagnosis.diagnosis);
+      if (aiDiagnosis.commands.length > 0) {
+        sections.push('');
+        sections.push('Suggested commands:');
+        aiDiagnosis.commands.forEach(c => sections.push(`  $ ${c}`));
+      }
+      sections.push('');
+    }
+
+    downloadTextFile(sections.join('\n'), `aap-deploy-bundle-${sessionId || 'export'}.txt`);
+    setShowExportMenu(false);
   };
 
   const phaseIcon = (s: Phase['status']) => {
@@ -362,14 +557,71 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
           </button>
         )}
         {logLines.length > 0 && (
-          <button
-            type="button"
-            onClick={handleExportLogs}
-            className="aap-btn aap-btn--tertiary aap-btn--sm"
-            aria-label="Export logs"
-          >
-            Export Logs
-          </button>
+          <div ref={exportRef} style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="aap-btn aap-btn--tertiary aap-btn--sm"
+              aria-label="Export deployment data"
+              aria-expanded={showExportMenu}
+              aria-haspopup="menu"
+            >
+              <ExportIcon aria-hidden /> Export <AngleDownIcon aria-hidden />
+            </button>
+            {showExportMenu && (
+              <div
+                role="menu"
+                className="aap-card"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: 4,
+                  minWidth: 220,
+                  zIndex: 100,
+                  padding: 0,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                }}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="aap-export-menu-item"
+                  onClick={handleExportLogs}
+                  style={{ display: 'block', width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}
+                >
+                  <strong>Deploy Logs</strong>
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--aap-text-muted, #888)', marginTop: 2 }}>
+                    {logLines.length} lines — includes warnings and errors
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="aap-export-menu-item"
+                  onClick={handleExportInventory}
+                  style={{ display: 'block', width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, borderTop: '1px solid var(--aap-border, #333)' }}
+                >
+                  <strong>Inventory File</strong>
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--aap-text-muted, #888)', marginTop: 2 }}>
+                    Generated INI inventory used for this deploy
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="aap-export-menu-item"
+                  onClick={handleExportBundle}
+                  style={{ display: 'block', width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, borderTop: '1px solid var(--aap-border, #333)' }}
+                >
+                  <strong>Full Bundle</strong>
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--aap-text-muted, #888)', marginTop: 2 }}>
+                    Inventory + logs + errors + AI diagnosis
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

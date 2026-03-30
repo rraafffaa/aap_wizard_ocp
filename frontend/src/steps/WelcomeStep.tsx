@@ -14,15 +14,15 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
     <div className="aap-welcome">
       <div className="aap-welcome__logo">
         <img
-          src="/aap-logo-standard.svg"
+          src="./aap-logo-standard.svg"
           alt="Red Hat Ansible Automation Platform"
           style={{ height: 80, width: 'auto' }}
         />
       </div>
-      <h2 className="aap-welcome__subheading" style={{ marginTop: 16 }}>Containerized Deployment Wizard — Version 2.6</h2>
+      <h2 className="aap-welcome__subheading" style={{ marginTop: 16 }}>Deployment Wizard — Version 2.6</h2>
 
       <p className="aap-step__description aap-mb-md">
-        Deploy AAP on RHEL as rootless Podman containers in minutes.
+        Deploy AAP on RHEL (containerized) or OpenShift — guided setup in minutes.
       </p>
 
       <div className="aap-welcome__cta">
@@ -104,19 +104,18 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
         <ul className="aap-requirements__list" role="list">
           <li className="aap-requirements__item">
             <CheckCircleIcon aria-hidden="true" />
-            Red Hat Enterprise Linux 9.4+ or 10+
-          </li>
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
             Valid AAP subscription
           </li>
           <li className="aap-requirements__item">
             <CheckCircleIcon aria-hidden="true" />
-            Minimum 16 GB RAM, 4 CPUs, 60 GB disk
+            Red Hat registry credentials (online install)
           </li>
+        </ul>
+        <div className="aap-requirements__title" style={{ marginTop: 16 }}>Containerized (RHEL)</div>
+        <ul className="aap-requirements__list" role="list">
           <li className="aap-requirements__item">
             <CheckCircleIcon aria-hidden="true" />
-            Red Hat registry credentials (online install)
+            RHEL 9.4+ or 10+ with 16 GB RAM, 4 CPUs, 60 GB disk
           </li>
           <li className="aap-requirements__item">
             <CheckCircleIcon aria-hidden="true" />
@@ -125,6 +124,17 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
           <li className="aap-requirements__item">
             <CheckCircleIcon aria-hidden="true" />
             FQDN-resolvable hostname(s)
+          </li>
+        </ul>
+        <div className="aap-requirements__title" style={{ marginTop: 16 }}>OpenShift</div>
+        <ul className="aap-requirements__list" role="list">
+          <li className="aap-requirements__item">
+            <CheckCircleIcon aria-hidden="true" />
+            OpenShift 4.14+ cluster with cluster-admin access
+          </li>
+          <li className="aap-requirements__item">
+            <CheckCircleIcon aria-hidden="true" />
+            AAP Operator available in OperatorHub
           </li>
         </ul>
       </div>

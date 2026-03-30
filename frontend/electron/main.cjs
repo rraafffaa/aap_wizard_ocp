@@ -169,6 +169,12 @@ async function createWindow() {
     },
   });
 
+  // Clear cached web content so Electron always loads the latest build/dev assets
+  if (isDev) {
+    await win.webContents.session.clearCache();
+    await win.webContents.session.clearStorageData({ storages: ['cachestorage'] });
+  }
+
   win.on('page-title-updated', (e) => e.preventDefault());
 
   win.webContents.setWindowOpenHandler(({ url }) => {

@@ -1,6 +1,7 @@
 import React from 'react';
-import { CheckCircleIcon, ExternalLinkAltIcon, TrashIcon, PlusCircleIcon } from '@patternfly/react-icons';
+import { CheckCircleIcon, ExternalLinkAltIcon, TrashIcon, PlusCircleIcon, ExportIcon } from '@patternfly/react-icons';
 import type { DeploymentConfig, DeploymentRecord } from '../types';
+import { downloadTextFile, exportConfigToFile } from '../types';
 
 interface Props {
   config: DeploymentConfig;
@@ -10,9 +11,12 @@ interface Props {
 }
 
 export function CompleteStep({ config, deploymentRecord, onDelete, onNewDeployment }: Props) {
+  const isOCP = config.platform === 'openshift';
   const host = config.target_host || config.gateway.hosts[0];
   const port = config.network.https_port;
-  const gatewayUrl = `https://${host}${port === 443 ? '' : `:${port}`}`;
+  const gatewayUrl = isOCP
+    ? config.ocp.api_url
+    : `https://${host}${port === 443 ? '' : `:${port}`}`;
   const isHistorical = !!deploymentRecord;
 
   const nextSteps = [
@@ -104,6 +108,44 @@ export function CompleteStep({ config, deploymentRecord, onDelete, onNewDeployme
               <PlusCircleIcon aria-hidden="true" /> New Deployment
             </button>
           )}
+          <button
+            type="button"
+            className="aap-btn aap-btn--secondary"
+            onClick={() => {
+              const summaryLines = [
+                'AAP Deployment Summary',
+                '═'.repeat(40),
+                `Date:       ${deploymentRecord ? new Date(deploymentRecord.timestamp).toLocaleString() : new Date().toLocaleString()}`,
+                `Platform:   ${isOCP ? 'OpenShift' : 'Containerized'}`,
+                `URL:        ${gatewayUrl}`,
+              ];
+              if (isOCP) {
+                summaryLines.push(
+                  `Namespace:  ${config.ocp.namespace}`,
+                  `Operator:   ${config.ocp.operator_channel}`,
+                );
+              } else {
+                summaryLines.push(
+                  `Topology:   ${config.topology === 'growth' ? 'Growth (All-in-One)' : 'Enterprise'}`,
+                  `Host:       ${host}`,
+                );
+              }
+              summaryLines.push(
+                `Components: Gateway, Controller, Hub, EDA`,
+                `Admin User: admin`,
+                `Session:    ${deploymentRecord?.id || 'N/A'}`,
+                '',
+                'Configuration (JSON):',
+                '─'.repeat(40),
+                JSON.stringify(config, null, 2),
+              );
+              const summary = summaryLines.join('\n');
+              downloadTextFile(summary, `aap-deploy-summary-${deploymentRecord?.id || 'export'}.txt`);
+            }}
+            aria-label="Export deployment summary"
+          >
+            <ExportIcon aria-hidden="true" /> Export Summary
+          </button>
           {onDelete && (
             <button
               type="button"
@@ -127,21 +169,44 @@ export function CompleteStep({ config, deploymentRecord, onDelete, onNewDeployme
           <div className="aap-dl__row">
             <dt className="aap-dl__term">Platform URL</dt>
             <dd className="aap-dl__value aap-dl__value--mono">
-              <a href={gatewayUrl} target="_blank" rel="noopener noreferrer">
-                {gatewayUrl}
-              </a>
+              {isOCP ? (
+                <>
+                  <span>{config.ocp.api_url}</span>
+                  <div className="aap-text-muted aap-text-sm" style={{ marginTop: 4 }}>
+                    The AAP web console URL is available via OpenShift Routes once deployment completes.
+                  </div>
+                </>
+              ) : (
+                <a href={gatewayUrl} target="_blank" rel="noopener noreferrer">
+                  {gatewayUrl}
+                </a>
+              )}
             </dd>
           </div>
+          {isOCP && (
+            <div className="aap-dl__row">
+              <dt className="aap-dl__term">Namespace</dt>
+              <dd className="aap-dl__value aap-dl__value--mono">{config.ocp.namespace}</dd>
+            </div>
+          )}
+          {isOCP && (
+            <div className="aap-dl__row">
+              <dt className="aap-dl__term">Operator Channel</dt>
+              <dd className="aap-dl__value">{config.ocp.operator_channel}</dd>
+            </div>
+          )}
           <div className="aap-dl__row">
-            <dt className="aap-dl__term">Topology</dt>
+            <dt className="aap-dl__term">{isOCP ? 'Management' : 'Topology'}</dt>
             <dd className="aap-dl__value">
-              {config.topology === 'growth' ? 'Growth (All-in-One)' : 'Enterprise'}
+              {isOCP ? 'Operator-Managed' : config.topology === 'growth' ? 'Growth (All-in-One)' : 'Enterprise'}
             </dd>
           </div>
-          <div className="aap-dl__row">
-            <dt className="aap-dl__term">Target Host</dt>
-            <dd className="aap-dl__value aap-dl__value--mono">{host}</dd>
-          </div>
+          {!isOCP && (
+            <div className="aap-dl__row">
+              <dt className="aap-dl__term">Target Host</dt>
+              <dd className="aap-dl__value aap-dl__value--mono">{host}</dd>
+            </div>
+          )}
           <div className="aap-dl__row">
             <dt className="aap-dl__term">Components</dt>
             <dd className="aap-dl__value">Gateway, Controller, Hub, EDA</dd>

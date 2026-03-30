@@ -1,36 +1,32 @@
 import React, { useState } from 'react';
 
 interface LoginPageProps {
-  onLogin: (token: string, username: string, password: string) => void;
+  onLogin: (token: string, username: string) => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSSO = async () => {
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/sso', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({ detail: 'Login failed' }));
-        throw new Error(body.detail || `Login failed (${res.status})`);
+        const body = await res.json().catch(() => ({ detail: 'SSO login failed' }));
+        throw new Error(body.detail || `SSO login failed (${res.status})`);
       }
 
       const data = await res.json();
-      onLogin(data.token, data.username, password);
+      onLogin(data.token, data.username);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'SSO login failed');
     } finally {
       setLoading(false);
     }
@@ -40,59 +36,31 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     <div className="login-page">
       <div className="login-page__left">
         <div className="login-card">
-          <h1 className="login-card__title">Log in to your account</h1>
-          <p className="login-card__subtitle">Enter your credentials.</p>
+          <h1 className="login-card__title">Welcome</h1>
+          <p className="login-card__subtitle">
+            Sign in to the AAP Deployment Wizard.
+          </p>
 
-          <form className="login-card__form" onSubmit={handleSubmit}>
-            {error && (
-              <div className="login-card__error" role="alert">
-                {error}
-              </div>
-            )}
-
-            <div className="login-card__field">
-              <label htmlFor="username">
-                Username <span className="login-card__required">*</span>
-              </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                autoFocus
-                required
-              />
+          {error && (
+            <div className="login-card__error" role="alert">
+              {error}
             </div>
+          )}
 
-            <div className="login-card__field">
-              <label htmlFor="password">
-                Password <span className="login-card__required">*</span>
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="aap-btn aap-btn--primary login-card__submit"
-              disabled={loading || !username || !password}
-            >
-              {loading ? 'Logging in...' : 'Log in'}
-            </button>
-          </form>
+          <button
+            type="button"
+            className="aap-btn aap-btn--primary login-card__sso-btn"
+            onClick={handleSSO}
+            disabled={loading}
+          >
+            {loading ? 'Signing in...' : 'Click here for SSO'}
+          </button>
         </div>
       </div>
 
       <div className="login-page__right">
         <img
-          src="/aap-logo-standard.svg"
+          src="./aap-logo-standard.svg"
           alt="Red Hat Ansible Automation Platform"
           className="login-page__logo"
         />

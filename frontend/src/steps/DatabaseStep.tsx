@@ -10,6 +10,7 @@ interface Props {
 
 export function DatabaseStep({ config, updateConfig }: Props) {
   const isGrowth = config.topology === 'growth';
+  const isOCP = config.platform === 'openshift';
 
   const setDbType = (type: DatabaseType) => {
     updateConfig({ database: { ...config.database, type } });
@@ -24,7 +25,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
         </p>
       </div>
 
-      {isGrowth && (
+      {(isGrowth || isOCP) && (
         <div className="aap-card aap-mb-lg">
           <div className="aap-card__header">
             <h3 className="aap-card__title">Database Type</h3>
@@ -72,7 +73,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
         </div>
       )}
 
-      {!isGrowth && (
+      {!isGrowth && !isOCP && (
         <div className="aap-alert aap-alert--warning aap-mb-lg">
           <span className="aap-alert__icon" aria-hidden>
             <ExclamationTriangleIcon />
@@ -81,6 +82,21 @@ export function DatabaseStep({ config, updateConfig }: Props) {
             <div className="aap-alert__title">External Database Required</div>
             <p className="aap-text-muted aap-text-sm">
               Enterprise topology requires an external PostgreSQL database for performance and independent scaling.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isOCP && (
+        <div className="aap-alert aap-alert--info aap-mb-lg">
+          <span className="aap-alert__icon" aria-hidden>
+            <ExclamationTriangleIcon />
+          </span>
+          <div className="aap-alert__content">
+            <div className="aap-alert__title">Operator-Managed Database</div>
+            <p className="aap-text-muted aap-text-sm">
+              On OpenShift, the AAP Operator automatically deploys and manages a PostgreSQL instance.
+              You can optionally configure an external database below, or leave this as default.
             </p>
           </div>
         </div>
@@ -111,7 +127,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
       </div>
 
       {/* External DB config */}
-      {(config.database.type === 'external' || !isGrowth) && (
+      {(config.database.type === 'external' || (!isGrowth && !isOCP)) && (
         <div className="aap-card aap-mb-lg">
           <div className="aap-card__header">
             <h3 className="aap-card__title">External Database Connection</h3>

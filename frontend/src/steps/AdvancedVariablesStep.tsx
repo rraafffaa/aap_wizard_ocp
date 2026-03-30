@@ -425,8 +425,17 @@ const MONITORING_FIELDS: FieldDef[] = [
   { key: 'metrics_utility_enabled', label: 'Metrics Utility', inventoryVar: 'metrics_utility_enabled', description: 'Enable metrics utility integration for usage reporting.', type: 'boolean', defaultValue: false },
 ];
 
+// Fields that only apply to containerized (not OCP)
+const CONTAINERIZED_ONLY_FIELD_PREFIXES = ['nginx_', 'uwsgi_'];
+
+function filterFieldsForPlatform(fields: FieldDef[], platform: string): FieldDef[] {
+  if (platform !== 'openshift') return fields;
+  return fields.filter(f => !CONTAINERIZED_ONLY_FIELD_PREFIXES.some(p => f.key.startsWith(p)));
+}
+
 export function AdvancedVariablesStep({ config, updateConfig }: Props) {
   const adv = config.advanced;
+  const isOCP = config.platform === 'openshift';
 
   function updateSection<K extends keyof AdvancedVariablesConfig>(
     section: K,
@@ -446,7 +455,7 @@ export function AdvancedVariablesStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">Advanced Variables</h2>
         <p className="aap-step__description">
-          Optional installer variables for fine-grained control. Each section links to the official
+          Optional {isOCP ? 'operator CR' : 'installer'} variables for fine-grained control. Each section links to the official
           AAP 2.6 documentation. Only modify these if you need to override defaults.
         </p>
       </div>
@@ -455,49 +464,55 @@ export function AdvancedVariablesStep({ config, updateConfig }: Props) {
         <InfoCircleIcon className="aap-alert__icon" />
         <div className="aap-alert__content">
           <div className="aap-alert__title">All variables are optional</div>
-          Variables left at their defaults will not be written to the inventory file.
+          Variables left at their defaults will not be written to the {isOCP ? 'custom resource' : 'inventory file'}.
           Only modified values are included. Expand a section to view and edit its variables.
         </div>
       </div>
 
-      <Section
-        id="common" title="Common / Registry" subtitle="Registry, TLS CA, container, and general installer settings."
-        docSection="common" fields={COMMON_FIELDS}
-        values={adv.common as unknown as Record<string, unknown>}
-        onChange={(k, v) => updateSection('common', k, v)}
-      />
+      {/* Common / Registry — containerized only (podman registry settings) */}
+      {!isOCP && (
+        <Section
+          id="common" title="Common / Registry" subtitle="Registry, TLS CA, container, and general installer settings."
+          docSection="common" fields={COMMON_FIELDS}
+          values={adv.common as unknown as Record<string, unknown>}
+          onChange={(k, v) => updateSection('common', k, v)}
+        />
+      )}
+
+      {/* Host Tuning — containerized only (kernel sysctl on RHEL hosts) */}
+      {!isOCP && (
+        <Section
+          id="host_tuning" title="Host Tuning" subtitle="Kernel sysctl and user-limit tuning for higher concurrency."
+          docSection="host_tuning" fields={HOST_TUNING_FIELDS}
+          values={adv.host_tuning as unknown as Record<string, unknown>}
+          onChange={(k, v) => updateSection('host_tuning', k, v)}
+        />
+      )}
 
       <Section
-        id="host_tuning" title="Host Tuning" subtitle="Kernel sysctl and user-limit tuning for higher concurrency."
-        docSection="host_tuning" fields={HOST_TUNING_FIELDS}
-        values={adv.host_tuning as unknown as Record<string, unknown>}
-        onChange={(k, v) => updateSection('host_tuning', k, v)}
-      />
-
-      <Section
-        id="controller" title="Automation Controller" subtitle="Admin, Nginx, PostgreSQL, TLS, uWSGI, postinstall, and extra settings."
-        docSection="controller" fields={CONTROLLER_FIELDS}
+        id="controller" title="Automation Controller" subtitle="Admin, PostgreSQL, TLS, postinstall, and extra settings."
+        docSection="controller" fields={filterFieldsForPlatform(CONTROLLER_FIELDS, config.platform)}
         values={adv.controller as unknown as Record<string, unknown>}
         onChange={(k, v) => updateSection('controller', k, v)}
       />
 
       <Section
-        id="gateway" title="Automation Gateway" subtitle="Admin, Nginx, PostgreSQL, Redis, TLS, gRPC, uWSGI, and extra settings."
-        docSection="gateway" fields={GATEWAY_FIELDS}
+        id="gateway" title="Automation Gateway" subtitle="Admin, PostgreSQL, Redis, TLS, gRPC, and extra settings."
+        docSection="gateway" fields={filterFieldsForPlatform(GATEWAY_FIELDS, config.platform)}
         values={adv.gateway as unknown as Record<string, unknown>}
         onChange={(k, v) => updateSection('gateway', k, v)}
       />
 
       <Section
-        id="hub" title="Automation Hub" subtitle="Storage, Nginx, PostgreSQL, TLS, signing, postinstall, and workers."
-        docSection="hub" fields={HUB_FIELDS}
+        id="hub" title="Automation Hub" subtitle="Storage, PostgreSQL, TLS, signing, postinstall, and workers."
+        docSection="hub" fields={filterFieldsForPlatform(HUB_FIELDS, config.platform)}
         values={adv.hub as unknown as Record<string, unknown>}
         onChange={(k, v) => updateSection('hub', k, v)}
       />
 
       <Section
-        id="eda" title="Event-Driven Ansible" subtitle="Workers, Nginx, PostgreSQL, Redis, TLS, gunicorn, and debug."
-        docSection="eda" fields={EDA_FIELDS}
+        id="eda" title="Event-Driven Ansible" subtitle="Workers, PostgreSQL, Redis, TLS, gunicorn, and debug."
+        docSection="eda" fields={filterFieldsForPlatform(EDA_FIELDS, config.platform)}
         values={adv.eda as unknown as Record<string, unknown>}
         onChange={(k, v) => updateSection('eda', k, v)}
       />
@@ -509,19 +524,25 @@ export function AdvancedVariablesStep({ config, updateConfig }: Props) {
         onChange={(k, v) => updateSection('database', k, v)}
       />
 
-      <Section
-        id="receptor" title="Receptor Mesh" subtitle="Port, protocol, TLS, signing, and log level for the automation mesh."
-        docSection="receptor" fields={RECEPTOR_FIELDS}
-        values={adv.receptor as unknown as Record<string, unknown>}
-        onChange={(k, v) => updateSection('receptor', k, v)}
-      />
+      {/* Receptor Mesh — containerized only (receptor runs on RHEL hosts, not in OCP pods) */}
+      {!isOCP && (
+        <Section
+          id="receptor" title="Receptor Mesh" subtitle="Port, protocol, TLS, signing, and log level for the automation mesh."
+          docSection="receptor" fields={RECEPTOR_FIELDS}
+          values={adv.receptor as unknown as Record<string, unknown>}
+          onChange={(k, v) => updateSection('receptor', k, v)}
+        />
+      )}
 
-      <Section
-        id="redis" title="Redis" subtitle="Port, TLS, cluster IP, and IPv6 preferences."
-        docSection="redis" fields={REDIS_FIELDS}
-        values={adv.redis as unknown as Record<string, unknown>}
-        onChange={(k, v) => updateSection('redis', k, v)}
-      />
+      {/* Redis — containerized only (OCP operator manages Redis internally) */}
+      {!isOCP && (
+        <Section
+          id="redis" title="Redis" subtitle="Port, TLS, cluster IP, and IPv6 preferences."
+          docSection="redis" fields={REDIS_FIELDS}
+          values={adv.redis as unknown as Record<string, unknown>}
+          onChange={(k, v) => updateSection('redis', k, v)}
+        />
+      )}
 
       <Section
         id="lightspeed" title="Ansible Lightspeed (Tech Preview)" subtitle="Lightspeed, chatbot, WCA model, and MCP tools."
@@ -530,12 +551,15 @@ export function AdvancedVariablesStep({ config, updateConfig }: Props) {
         onChange={(k, v) => updateSection('lightspeed', k, v)}
       />
 
-      <Section
-        id="monitoring" title="Monitoring (PCP)" subtitle="Performance Co-Pilot and metrics utility."
-        docSection="monitoring" fields={MONITORING_FIELDS}
-        values={adv.monitoring as unknown as Record<string, unknown>}
-        onChange={(k, v) => updateSection('monitoring', k, v)}
-      />
+      {/* Monitoring (PCP) — containerized only (PCP runs on RHEL hosts) */}
+      {!isOCP && (
+        <Section
+          id="monitoring" title="Monitoring (PCP)" subtitle="Performance Co-Pilot and metrics utility."
+          docSection="monitoring" fields={MONITORING_FIELDS}
+          values={adv.monitoring as unknown as Record<string, unknown>}
+          onChange={(k, v) => updateSection('monitoring', k, v)}
+        />
+      )}
     </div>
   );
 }

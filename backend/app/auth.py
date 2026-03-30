@@ -21,7 +21,7 @@ if not JWT_SECRET:
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 8
 
-PUBLIC_PATHS = {"/api/auth/login", "/api/health", "/docs", "/openapi.json"}
+PUBLIC_PATHS = {"/api/auth/login", "/api/auth/sso", "/api/health", "/docs", "/openapi.json"}
 
 
 class LoginRequest(BaseModel):
@@ -87,7 +87,7 @@ def get_token_from_request(request: Request) -> Optional[str]:
 def is_public_path(path: str) -> bool:
     if path in PUBLIC_PATHS:
         return True
-    if path.startswith("/api/auth/login"):
+    if path.startswith("/api/auth/login") or path.startswith("/api/auth/sso"):
         return True
     if not path.startswith("/api/") and not path.startswith("/ws/"):
         return True

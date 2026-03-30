@@ -93,7 +93,8 @@ class TestDeployerPhases:
     @pytest.mark.asyncio
     async def test_validate_phase(self, default_config):
         d = _deployer(default_config)
-        await d._phase_validate()
+        with patch.object(d, '_ssh_cmd', new_callable=AsyncMock, return_value=0):
+            await d._phase_validate()
         assert any("validated" in line.lower() for line in d._log_lines)
 
     @pytest.mark.asyncio
@@ -128,6 +129,7 @@ class TestDeployerPhases:
 
         with (
             patch.object(d, "_phase_validate", new=_noop),
+            patch.object(d, "_phase_prepare_host", new=_noop),
             patch.object(d, "_phase_generate_inventory", new=_noop),
             patch.object(d, "_phase_upload", new=_noop),
             patch.object(d, "_phase_preflight", new=_noop),
@@ -157,6 +159,7 @@ class TestDeployerPhases:
 
         with (
             patch.object(d, "_phase_validate", new=_capture),
+            patch.object(d, "_phase_prepare_host", new=_noop),
             patch.object(d, "_phase_generate_inventory", new=_noop),
             patch.object(d, "_phase_upload", new=_noop),
             patch.object(d, "_phase_preflight", new=_noop),
@@ -191,6 +194,7 @@ class TestDeployerPhases:
 
         with (
             patch.object(d, "_phase_validate", new=_noop),
+            patch.object(d, "_phase_prepare_host", new=_noop),
             patch.object(d, "_phase_generate_inventory", new=_noop),
             patch.object(d, "_phase_upload", new=_noop),
             patch.object(d, "_phase_preflight", new=_noop),
@@ -227,6 +231,7 @@ class TestDeployerPhases:
 
         with (
             patch.object(d, "_phase_validate", new=_noop),
+            patch.object(d, "_phase_prepare_host", new=_noop),
             patch.object(d, "_phase_generate_inventory", new=_noop),
             patch.object(d, "_phase_upload", new=_slow_phase),
             patch.object(d, "_phase_preflight", new=_noop),
@@ -269,6 +274,7 @@ class TestDeployerPhases:
 
         with (
             patch.object(d, "_phase_validate", new=_noop),
+            patch.object(d, "_phase_prepare_host", new=_noop),
             patch.object(d, "_phase_generate_inventory", new=_noop),
             patch.object(d, "_phase_upload", new=_noop),
             patch.object(d, "_phase_preflight", new=_noop),
@@ -284,6 +290,7 @@ class TestDeployerPhases:
     async def test_local_install_simulation(self, default_config):
         d = _deployer(default_config)
         d._setup_dir = None
+        d._is_remote = False
 
         with (
             patch.object(d, "_find_setup_dir", return_value=None),

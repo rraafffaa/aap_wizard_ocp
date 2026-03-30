@@ -1,7 +1,7 @@
 # AAP Deployment Wizard — End-to-End Test Plan
 
-**Application URL:** https://aap-wizard.eastus.cloudapp.azure.com
-**Target VM:** 192.0.2.10 (rafeal / REDACTED_PASSWORD)
+**Application URL:** `https://<WIZARD_FQDN>`
+**Target VM:** `<TARGET_VM_IP>` (`<SSH_USER>` / `<SSH_PASSWORD>`)
 **Date:** 2026-03-20
 
 ---
@@ -51,18 +51,18 @@
 ### T1: Growth + Online + Full Deploy (PRIMARY TEST)
 
 **Pre-conditions:**
-- Target VM running: 192.0.2.10
+- Target VM running: `<TARGET_VM_IP>`
 - Valid Red Hat Registry credentials
 
 **Steps:**
-1. Navigate to https://aap-wizard.eastus.cloudapp.azure.com
+1. Navigate to `https://<WIZARD_FQDN>`
 2. Accept browser security warning (self-signed cert)
 3. Login with Red Hat Registry credentials
 4. Welcome → click Next
 5. EULA → Accept → Next
 6. Subscription → defaults (online) → Next
 7. Topology → Growth (All-in-One) → Next
-8. Target → Enter: IP=192.0.2.10, User=rafeal, Password=REDACTED_PASSWORD → Verify Connection → Next
+8. Target → Enter: IP=`<TARGET_VM_IP>`, User=`<SSH_USER>`, Password=`<SSH_PASSWORD>` → Verify Connection → Next
 9. Hosts → defaults (all components on same host) → Next
 10. Components → defaults → Next
 11. Database → Managed, set admin password → Next
@@ -77,7 +77,7 @@
 **Expected Results:**
 - All 8 phases complete (validate → complete)
 - No errors in deployment log
-- AAP accessible at https://192.0.2.10:443
+- AAP accessible at `https://<TARGET_VM_IP>:443`
 - Gateway login page visible
 
 **Known Issues to Watch:**
@@ -88,7 +88,7 @@
 ### F16: Security Headers Test
 
 ```bash
-curl -sI https://aap-wizard.eastus.cloudapp.azure.com/api/health | grep -i 'x-content-type\|x-frame\|strict-transport\|x-xss\|referrer-policy'
+curl -sI https://<WIZARD_FQDN>/api/health | grep -i 'x-content-type\|x-frame\|strict-transport\|x-xss\|referrer-policy'
 ```
 
 **Expected:**
@@ -132,12 +132,12 @@ Verify passwords with special characters (e.g., `P@ss#word=1 2`) generate valid 
 
 | Resource | Type | Size | IP | Purpose |
 |----------|------|------|----|---------|
-| aap-wizard-vm | VM | B2s | 192.0.2.20 | Hosts the wizard app |
-| aap-wizard-demo | VM | D4s_v3 | 192.0.2.10 | AAP deployment target |
-| aap-wizard-ai | Azure OpenAI | S0 | - | AI error diagnosis |
-| your-acr-name | Container Registry | Basic | - | Docker image storage |
+| Wizard VM | VM | B2s | `<WIZARD_VM_IP>` | Hosts the wizard app |
+| Target VM | VM | D4s_v3 | `<TARGET_VM_IP>` | AAP deployment target |
+| AI Service | Azure OpenAI | S0 | - | AI error diagnosis |
+| Container Registry | ACR | Basic | - | Docker image storage |
 
-**NSG Rules (aap-nsg):**
-- SSH (22): Admin IP only (192.0.2.30/32)
+**NSG Rules:**
+- SSH (22): Admin IP only
 - HTTPS (443): Open (app has JWT auth)
 - All other inbound: DENY

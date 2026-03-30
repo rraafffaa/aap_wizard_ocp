@@ -127,7 +127,8 @@ export function validateEulaStep(config: DeploymentConfig): ValidationError[] {
 export function validateSubscriptionStep(config: DeploymentConfig): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  if (config.installation_type === 'online') {
+  // OCP clusters use pull secrets for registry access, not explicit credentials
+  if (config.installation_type === 'online' && config.platform !== 'openshift') {
     const userErr = validateRequired(config.registry.username, 'Registry username');
     if (userErr) errors.push({ field: 'registry.username', message: userErr, severity: 'error' });
 
@@ -165,6 +166,11 @@ export function validateTopologyStep(config: DeploymentConfig): ValidationError[
 export function validateHostsStep(config: DeploymentConfig): ValidationError[] {
   const errors: ValidationError[] = [];
   const isEnterprise = config.topology === 'enterprise';
+
+  // OCP uses operator-managed pods, not host lists
+  if (config.platform === 'openshift') {
+    return errors;
+  }
 
   if (config.gateway.hosts.length === 0) {
     errors.push({ field: 'gateway.hosts', message: 'At least one gateway host is required', severity: 'error' });

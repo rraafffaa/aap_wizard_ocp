@@ -2,8 +2,8 @@
 # prepare-aap-vm.yml — Prepare a RHEL 9 VM for AAP 2.6 Containerized deployment
 #
 # Usage:
-#   ansible-playbook playbooks/prepare-aap-vm.yml -i "192.0.2.10," \
-#     -e "ansible_user=rafeal ansible_password=REDACTED_PASSWORD" \
+#   ansible-playbook playbooks/prepare-aap-vm.yml -i "<TARGET_VM_IP>," \
+#     -e "ansible_user=<SSH_USER> ansible_password=<SSH_PASSWORD>" \
 #     -e "rh_username=<registry_user> rh_password=<registry_pass>"
 #
 # What it does:

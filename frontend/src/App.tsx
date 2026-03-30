@@ -2,15 +2,14 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   CheckCircleIcon,
   SaveIcon,
-  ImportIcon,
-  ExportIcon,
   CheckIcon,
   InfoCircleIcon,
   ExclamationCircleIcon,
+  CogIcon,
 } from '@patternfly/react-icons';
 import {
-  WIZARD_STEPS, STEP_SECTIONS, getDefaultConfig, saveConfig, loadSavedConfig, clearSavedConfig,
-  exportConfigToFile, saveDeploymentRecord, getLastSuccessfulDeployment, deleteDeploymentRecord,
+  getWizardSteps, getStepSections, getDefaultConfig, saveConfig, loadSavedConfig, clearSavedConfig,
+  saveDeploymentRecord, getLastSuccessfulDeployment, deleteDeploymentRecord,
   type WizardStep, type DeploymentConfig, type DeploymentRecord,
 } from './types';
 import { WelcomeStep } from './steps/WelcomeStep';
@@ -28,54 +27,50 @@ import { PreflightStep } from './steps/PreflightStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { DeployStep } from './steps/DeployStep';
 import { CompleteStep } from './steps/CompleteStep';
+import { PlatformStep } from './steps/PlatformStep';
+import { ClusterStep } from './steps/ClusterStep';
+import { NamespaceStep } from './steps/NamespaceStep';
+import { OperatorStep } from './steps/OperatorStep';
+import { ReplicasStep } from './steps/ReplicasStep';
+import { OnboardingStep } from './steps/OnboardingStep';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { LoginPage } from './components/LoginPage';
-import { setAuthToken, getStoredToken, clearAuth, isTokenExpired } from './api';
+import { ProfileManager } from './components/ProfileManager';
+import { SettingsModal } from './components/SettingsModal';
+import { setAuthToken, getStoredToken, isTokenExpired } from './api';
 
 type ToastType = 'info' | 'error' | 'success';
 
 function WizardApp() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+  // Auto-authenticate on startup (Electron desktop app — no login needed)
+  useEffect(() => {
     const token = getStoredToken();
-    return !!token && !isTokenExpired(token);
-  });
-  const [authUser, setAuthUser] = useState(() => sessionStorage.getItem('aap_wizard_user') || '');
+    if (!token || isTokenExpired(token)) {
+      fetch('/api/auth/sso', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(res => res.json())
+        .then(data => {
+          if (data.token) {
+            setAuthToken(data.token);
+            sessionStorage.setItem('aap_wizard_user', data.username || 'user');
+          }
+        })
+        .catch(() => { /* backend not yet ready — API calls will retry */ });
+    }
+  }, []);
 
-  const handleLogin = (token: string, username: string, password: string) => {
-    setAuthToken(token);
-    sessionStorage.setItem('aap_wizard_user', username);
-    sessionStorage.setItem('aap_wizard_registry_pw', password);
-    setAuthUser(username);
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    clearAuth();
-    setAuthUser('');
-    setIsAuthenticated(false);
-  };
-
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
-  return <AuthenticatedWizard username={authUser} onLogout={handleLogout} />;
+  return <AuthenticatedWizard />;
 }
 
-function AuthenticatedWizard({ username, onLogout }: { username: string; onLogout: () => void }) {
+function AuthenticatedWizard() {
   const [currentStep, setCurrentStep] = useState<WizardStep>('welcome');
   const [config, setConfig] = useState<DeploymentConfig>(() => {
-    const defaults = getDefaultConfig();
-    const registryPw = sessionStorage.getItem('aap_wizard_registry_pw') || '';
-    defaults.registry.username = username;
-    defaults.registry.password = registryPw;
-    return defaults;
+    return getDefaultConfig();
   });
   const [completedSteps, setCompletedSteps] = useState<Set<WizardStep>>(new Set());
   const [deploySessionId, setDeploySessionId] = useState('');
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [viewingPastDeploy, setViewingPastDeploy] = useState<DeploymentRecord | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const savedState = useRef(loadSavedConfig());
   const stepKey = useRef(0);
 
@@ -96,11 +91,18 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
     }
   }, [toast]);
 
-  const currentIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
+  const wizardSteps = getWizardSteps(config.platform);
+  const stepSections = getStepSections(config.platform);
+  const currentIndex = wizardSteps.findIndex((s) => s.id === currentStep);
 
   const updateConfig = useCallback((partial: Partial<DeploymentConfig>) => {
     setConfig((prev) => ({ ...prev, ...partial }));
   }, []);
+
+  const scrollContentToTop = () => {
+    const el = document.querySelector('.aap-content');
+    if (el) el.scrollTo({ top: 0, behavior: 'instant' });
+  };
 
   const goNext = useCallback(() => {
     setCompletedSteps((prev) => new Set([...prev, currentStep]));
@@ -109,9 +111,10 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
       saveDeploymentRecord(deploySessionId, config, 'completed');
     }
     const nextIndex = currentIndex + 1;
-    if (nextIndex < WIZARD_STEPS.length) {
+    if (nextIndex < wizardSteps.length) {
       stepKey.current++;
-      setCurrentStep(WIZARD_STEPS[nextIndex].id);
+      setCurrentStep(wizardSteps[nextIndex].id);
+      scrollContentToTop();
     }
   }, [currentStep, currentIndex, deploySessionId, config]);
 
@@ -119,16 +122,18 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0) {
       stepKey.current++;
-      setCurrentStep(WIZARD_STEPS[prevIndex].id);
+      setCurrentStep(wizardSteps[prevIndex].id);
+      scrollContentToTop();
     }
   }, [currentIndex]);
 
   const goToStep = useCallback(
     (step: WizardStep) => {
-      const stepIndex = WIZARD_STEPS.findIndex((s) => s.id === step);
+      const stepIndex = wizardSteps.findIndex((s) => s.id === step);
       if (stepIndex <= currentIndex || completedSteps.has(step) || stepIndex === currentIndex + 1) {
         stepKey.current++;
         setCurrentStep(step);
+        scrollContentToTop();
       }
     },
     [currentIndex, completedSteps],
@@ -136,10 +141,12 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
 
   const resumeSession = () => {
     if (savedState.current) {
-      setConfig(savedState.current.config);
-      const stepIdx = WIZARD_STEPS.findIndex((s) => s.id === savedState.current!.step);
+      const restoredConfig = savedState.current.config;
+      setConfig(restoredConfig);
+      const restoredSteps = getWizardSteps(restoredConfig.platform ?? 'containerized');
+      const stepIdx = restoredSteps.findIndex((s) => s.id === savedState.current!.step);
       const completed = new Set<WizardStep>();
-      for (let i = 0; i < stepIdx; i++) completed.add(WIZARD_STEPS[i].id);
+      for (let i = 0; i < stepIdx; i++) completed.add(restoredSteps[i].id);
       setCompletedSteps(completed);
       stepKey.current++;
       setCurrentStep(savedState.current.step);
@@ -151,28 +158,6 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
   const startFresh = () => {
     clearSavedConfig();
     setShowResumePrompt(false);
-  };
-
-  const handleImportConfig = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const imported = JSON.parse(reader.result as string);
-          setConfig({ ...getDefaultConfig(), ...imported });
-          setToast({ message: 'Configuration imported', type: 'success' });
-        } catch {
-          setToast({ message: 'Invalid JSON configuration file', type: 'error' });
-        }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
   };
 
   const viewPastDeployment = useCallback(() => {
@@ -196,7 +181,7 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
   }, []);
 
   const isDeploying = currentStep === 'deploy';
-  const isTerminal = currentStep === 'complete';
+  const isTerminal = currentStep === 'complete' || currentStep === 'onboarding';
   const showFooter = currentStep !== 'welcome' && !isDeploying && !isTerminal;
 
   const renderStep = () => {
@@ -204,10 +189,16 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
     switch (currentStep) {
       case 'welcome': return <WelcomeStep onNext={goNext} onViewPastDeploy={viewPastDeployment} />;
       case 'eula': return <EulaStep {...common} />;
+      case 'platform': return <PlatformStep {...common} />;
       case 'subscription': return <SubscriptionStep {...common} />;
       case 'topology': return <TopologyStep {...common} />;
       case 'target': return <TargetStep {...common} />;
       case 'hosts': return <HostsStep {...common} />;
+      // OCP branch steps
+      case 'cluster': return <ClusterStep {...common} />;
+      case 'namespace': return <NamespaceStep {...common} />;
+      case 'operator': return <OperatorStep {...common} />;
+      case 'replicas': return <ReplicasStep {...common} />;
       case 'components': return <ComponentsStep {...common} />;
       case 'database': return <DatabaseStep {...common} />;
       case 'network': return <NetworkStep {...common} />;
@@ -239,6 +230,7 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
             }}
           />
         );
+      case 'onboarding': return <OnboardingStep {...common} />;
       default: return null;
     }
   };
@@ -285,46 +277,42 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
       <header className="aap-header">
         <div className="aap-header__brand">
           <img
-            src="/aap-logo-standard.svg"
+            src="./aap-logo-standard.svg"
             alt="Red Hat Ansible Automation Platform"
             className="aap-header__logo"
           />
         </div>
         <div className="aap-header__actions">
+          <ProfileManager
+            config={config}
+            onLoadProfile={(newConfig) => {
+              setConfig(newConfig);
+              stepKey.current++;
+              setCurrentStep('platform');
+            }}
+            onToast={(message, type) => setToast({ message, type })}
+          />
           <button
             className="aap-btn aap-btn--tertiary aap-btn--sm"
-            onClick={handleImportConfig}
-            aria-label="Import configuration"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="AI Settings"
+            title="AI Configuration"
           >
-            <ImportIcon /> Import
-          </button>
-          <button
-            className="aap-btn aap-btn--tertiary aap-btn--sm"
-            onClick={() => exportConfigToFile(config)}
-            aria-label="Export configuration"
-          >
-            <ExportIcon /> Export
+            <CogIcon /> Settings
           </button>
           <span className="aap-header__version">v2.6</span>
-          <span className="aap-header__user">{username}</span>
-          <button
-            className="aap-btn aap-btn--tertiary aap-btn--sm"
-            onClick={onLogout}
-          >
-            Log Out
-          </button>
         </div>
       </header>
 
       <div className="aap-body">
         <nav className="aap-sidebar" aria-label="Wizard steps">
           <div className="aap-sidebar__nav">
-            {STEP_SECTIONS.map((section) => (
+            {stepSections.map((section) => (
               <React.Fragment key={section.label}>
                 <div className="aap-sidebar__section-label">{section.label}</div>
                 {section.steps.map((stepId) => {
-                  const stepDef = WIZARD_STEPS.find((s) => s.id === stepId)!;
-                  const index = WIZARD_STEPS.findIndex((s) => s.id === stepId);
+                  const stepDef = wizardSteps.find((s) => s.id === stepId)!;
+                  const index = wizardSteps.findIndex((s) => s.id === stepId);
                   const isActive = stepId === currentStep;
                   const isCompleted = completedSteps.has(stepId);
                   const isAccessible = index <= currentIndex || completedSteps.has(stepId) || index === currentIndex + 1;
@@ -391,7 +379,7 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
           </div>
           <div className="aap-footer__actions">
             <span className="aap-footer__meta">
-              {currentIndex + 1} of {WIZARD_STEPS.length}
+              {currentIndex + 1} of {wizardSteps.length}
             </span>
             <button className="aap-btn aap-btn--primary" onClick={goNext}>
               {currentStep === 'review' ? 'Start Deployment' : 'Next'}
@@ -399,6 +387,8 @@ function AuthenticatedWizard({ username, onLogout }: { username: string; onLogou
           </div>
         </footer>
       )}
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

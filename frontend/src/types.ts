@@ -1,7 +1,91 @@
+export type DeployPlatform = 'containerized' | 'openshift';
 export type Topology = 'growth' | 'enterprise';
 export type InstallationType = 'online' | 'disconnected';
 export type DatabaseType = 'managed' | 'external';
 export type RedisMode = 'standalone' | 'cluster';
+
+// ── OpenShift Configuration ──────────────────────────────
+
+export interface OCPClusterInfo {
+  api_url: string;
+  version: string;
+  platform: string;
+  nodes: OCPNode[];
+  storage_classes: string[];
+  operators: string[];
+  connected: boolean;
+  error?: string;
+}
+
+export interface OCPNode {
+  name: string;
+  role: 'master' | 'worker' | 'infra';
+  ready: boolean;
+  cpu: string;
+  memory: string;
+}
+
+export interface OCPConfig {
+  api_url: string;
+  token: string;
+  namespace: string;
+  storage_class: string;
+  postgres_storage_size: string;
+  hub_storage_size: string;
+  hub_storage_backend: 'file' | 's3' | 'azure';
+  gateway_replicas: number;
+  controller_replicas: number;
+  hub_replicas: number;
+  eda_replicas: number;
+  controller_resource_preset: 'small' | 'medium' | 'large' | 'custom';
+  custom_route_host: string;
+  tls_termination: 'edge' | 'passthrough' | 'reencrypt';
+  operator_channel: string;
+  operator_installed: boolean;
+  cr_overrides: string;
+}
+
+export function getDefaultOCPConfig(): OCPConfig {
+  return {
+    api_url: '',
+    token: '',
+    namespace: 'aap',
+    storage_class: '',
+    postgres_storage_size: '50Gi',
+    hub_storage_size: '100Gi',
+    hub_storage_backend: 'file',
+    gateway_replicas: 1,
+    controller_replicas: 1,
+    hub_replicas: 1,
+    eda_replicas: 1,
+    controller_resource_preset: 'medium',
+    custom_route_host: '',
+    tls_termination: 'edge',
+    operator_channel: 'stable-2.6',
+    operator_installed: false,
+    cr_overrides: '',
+  };
+}
+
+// ── Onboarding Types ─────────────────────────────────────
+
+export interface OnboardingProgress {
+  manifest_uploaded: boolean;
+  project_created: boolean;
+  inventory_created: boolean;
+  template_created: boolean;
+  job_launched: boolean;
+}
+
+export function getDefaultOnboardingProgress(): OnboardingProgress {
+  return {
+    manifest_uploaded: false,
+    project_created: false,
+    inventory_created: false,
+    template_created: false,
+    job_launched: false,
+  };
+}
 
 export interface TLSConfig {
   custom_ca_cert: string;
@@ -321,6 +405,7 @@ export interface NetworkConfig {
 }
 
 export interface DeploymentConfig {
+  platform: DeployPlatform;
   topology: Topology;
   installation_type: InstallationType;
   registry: RegistryCredentials;
@@ -342,6 +427,8 @@ export interface DeploymentConfig {
     target_password: string;
     target_ssh_port: number;
     advanced: AdvancedVariablesConfig;
+    ocp: OCPConfig;
+    onboarding: OnboardingProgress;
   }
 
 export interface PreflightCheck {
@@ -374,10 +461,18 @@ export interface DeployStatus {
 export type WizardStep =
   | 'welcome'
   | 'eula'
+  | 'platform'
+  // Containerized branch
   | 'subscription'
   | 'topology'
   | 'target'
   | 'hosts'
+  // OCP branch
+  | 'cluster'
+  | 'namespace'
+  | 'operator'
+  | 'replicas'
+  // Shared steps
   | 'components'
   | 'database'
   | 'network'
@@ -386,18 +481,33 @@ export type WizardStep =
   | 'preflight'
   | 'review'
   | 'deploy'
-  | 'complete';
+  | 'complete'
+  | 'onboarding';
 
-export const STEP_SECTIONS: { label: string; steps: WizardStep[] }[] = [
-  { label: 'Getting Started', steps: ['welcome', 'eula'] },
+// Steps for containerized deployment
+const CONTAINERIZED_SECTIONS: { label: string; steps: WizardStep[] }[] = [
+  { label: 'Getting Started', steps: ['welcome', 'eula', 'platform'] },
   { label: 'Installation', steps: ['subscription', 'topology', 'target', 'hosts'] },
   { label: 'Configuration', steps: ['components', 'database', 'network', 'credentials', 'advanced'] },
-  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete'] },
+  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete', 'onboarding'] },
 ];
 
-export const WIZARD_STEPS: { id: WizardStep; label: string }[] = [
+// Steps for OpenShift deployment
+const OPENSHIFT_SECTIONS: { label: string; steps: WizardStep[] }[] = [
+  { label: 'Getting Started', steps: ['welcome', 'eula', 'platform'] },
+  { label: 'OpenShift', steps: ['cluster', 'namespace', 'operator', 'replicas'] },
+  { label: 'Configuration', steps: ['components', 'database', 'network', 'credentials', 'advanced'] },
+  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete', 'onboarding'] },
+];
+
+export function getStepSections(platform: DeployPlatform): { label: string; steps: WizardStep[] }[] {
+  return platform === 'openshift' ? OPENSHIFT_SECTIONS : CONTAINERIZED_SECTIONS;
+}
+
+const CONTAINERIZED_STEPS: { id: WizardStep; label: string }[] = [
   { id: 'welcome', label: 'Welcome' },
   { id: 'eula', label: 'License Agreement' },
+  { id: 'platform', label: 'Platform' },
   { id: 'subscription', label: 'Installation Type' },
   { id: 'topology', label: 'Topology' },
   { id: 'target', label: 'SSH Target' },
@@ -411,7 +521,36 @@ export const WIZARD_STEPS: { id: WizardStep; label: string }[] = [
   { id: 'review', label: 'Review' },
   { id: 'deploy', label: 'Deploy' },
   { id: 'complete', label: 'Complete' },
+  { id: 'onboarding', label: 'Get Started' },
 ];
+
+const OPENSHIFT_STEPS: { id: WizardStep; label: string }[] = [
+  { id: 'welcome', label: 'Welcome' },
+  { id: 'eula', label: 'License Agreement' },
+  { id: 'platform', label: 'Platform' },
+  { id: 'cluster', label: 'Cluster Connection' },
+  { id: 'namespace', label: 'Namespace & Storage' },
+  { id: 'operator', label: 'AAP Operator' },
+  { id: 'replicas', label: 'Scaling' },
+  { id: 'components', label: 'Components' },
+  { id: 'database', label: 'Database' },
+  { id: 'network', label: 'Routes & TLS' },
+  { id: 'credentials', label: 'Credentials' },
+  { id: 'advanced', label: 'Advanced Variables' },
+  { id: 'preflight', label: 'Pre-flight Checks' },
+  { id: 'review', label: 'Review' },
+  { id: 'deploy', label: 'Deploy' },
+  { id: 'complete', label: 'Complete' },
+  { id: 'onboarding', label: 'Get Started' },
+];
+
+export function getWizardSteps(platform: DeployPlatform): { id: WizardStep; label: string }[] {
+  return platform === 'openshift' ? OPENSHIFT_STEPS : CONTAINERIZED_STEPS;
+}
+
+// Legacy exports for backward compatibility during transition
+export const STEP_SECTIONS = CONTAINERIZED_SECTIONS;
+export const WIZARD_STEPS = CONTAINERIZED_STEPS;
 
 export const STORAGE_KEY = 'aap-wizard-config';
 export const STORAGE_STEP_KEY = 'aap-wizard-step';
@@ -522,6 +661,7 @@ export function getDefaultAdvancedConfig(): AdvancedVariablesConfig {
 
 export function getDefaultConfig(): DeploymentConfig {
   return {
+    platform: 'containerized',
     topology: 'enterprise',
     installation_type: 'online',
     registry: { username: '', password: '' },
@@ -590,11 +730,13 @@ export function getDefaultConfig(): DeploymentConfig {
     target_password: '',
     target_ssh_port: 22,
     advanced: getDefaultAdvancedConfig(),
+    ocp: getDefaultOCPConfig(),
+    onboarding: getDefaultOnboardingProgress(),
   };
 }
 
 /** Fields that must never be persisted to localStorage. */
-function stripSensitiveFields(config: DeploymentConfig): DeploymentConfig {
+export function stripSensitiveFields(config: DeploymentConfig): DeploymentConfig {
   const clone = JSON.parse(JSON.stringify(config)) as DeploymentConfig;
   // SSH / target credentials
   clone.target_password = '';
@@ -606,6 +748,8 @@ function stripSensitiveFields(config: DeploymentConfig): DeploymentConfig {
     clone[comp].pg_password = '';
   }
   clone.database.admin_password = '';
+  // OCP token
+  if (clone.ocp) clone.ocp.token = '';
   // Advanced secrets
   if (clone.advanced?.lightspeed) {
     clone.advanced.lightspeed.chatbot_model_api_key = '';
@@ -638,6 +782,8 @@ export function loadSavedConfig(): { config: DeploymentConfig; step: WizardStep 
       const config: DeploymentConfig = {
         ...defaults,
         ...parsed,
+        ocp: { ...defaults.ocp, ...(parsed.ocp ?? {}) },
+        onboarding: { ...defaults.onboarding, ...(parsed.onboarding ?? {}) },
         advanced: {
           ...defaults.advanced,
           ...(parsed.advanced ?? {}),
@@ -736,7 +882,8 @@ export function clearDeploymentHistory() {
 }
 
 export function exportConfigToFile(config: DeploymentConfig) {
-  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  const safe = stripSensitiveFields(config);
+  const blob = new Blob([JSON.stringify(safe, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

@@ -38,7 +38,6 @@ export function clearAuth() {
   authToken = null;
   sessionStorage.removeItem('aap_wizard_token');
   sessionStorage.removeItem('aap_wizard_user');
-  sessionStorage.removeItem('aap_wizard_registry_pw');
 }
 
 export function isTokenExpired(token: string): boolean {
@@ -812,8 +811,82 @@ export async function prepareHost(
   }, 300_000);
 }
 
+export interface PrepareStreamEvent {
+  type: 'steps' | 'start' | 'complete' | 'done';
+  id?: string;
+  index?: number;
+  label?: string;
+  status?: string;
+  output?: string;
+  success?: boolean;
+  errors?: string[];
+  steps?: Array<{ id: string; label: string }>;
+}
+
+/**
+ * Stream host preparation via SSE. Calls onEvent for each server-sent event,
+ * giving real-time feedback as each action completes.
+ */
+export async function prepareHostStream(
+  target: { host: string; user: string; password: string; port: number },
+  fixItems: string[] = ['all'],
+  onEvent: (event: PrepareStreamEvent) => void,
+): Promise<void> {
+  const token = getStoredToken();
+  const base = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
+  const res = await fetch(`${base}/api/prepare/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      target_host: target.host,
+      target_user: target.user,
+      target_password: target.password,
+      target_ssh_port: target.port,
+      fix_items: fixItems,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Prepare stream failed: ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // Parse SSE lines
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const event = JSON.parse(line.slice(6)) as PrepareStreamEvent;
+          onEvent(event);
+        } catch { /* ignore parse errors */ }
+      }
+    }
+  }
+}
+
 export async function generateInventory(config: DeploymentConfig) {
   return request<{ inventory: string }>('/api/inventory/generate', {
+    method: 'POST',
+    body: JSON.stringify({ config }),
+  });
+}
+
+export async function generateCRYaml(config: DeploymentConfig) {
+  return request<{ yaml: string }>('/api/ocp/cr/generate', {
     method: 'POST',
     body: JSON.stringify({ config }),
   });
@@ -827,6 +900,12 @@ export async function validateInventory(config: DeploymentConfig) {
 }
 
 export async function startDeploy(config: DeploymentConfig) {
+  if (config.platform === 'openshift') {
+    return request<{ session_id: string }>('/api/ocp/deploy/start', {
+      method: 'POST',
+      body: JSON.stringify({ config }),
+    });
+  }
   return request<{ session_id: string }>('/api/deploy/start', {
     method: 'POST',
     body: JSON.stringify(config),
@@ -834,7 +913,9 @@ export async function startDeploy(config: DeploymentConfig) {
 }
 
 export async function getDeployStatus(sessionId: string) {
-  return request<DeployStatus>(`/api/deploy/${sessionId}/status`);
+  const isOCP = sessionId.startsWith('ocp-');
+  const base = isOCP ? '/api/ocp/deploy' : '/api/deploy';
+  return request<DeployStatus>(`${base}/${sessionId}/status`);
 }
 
 export async function cancelDeploy(sessionId: string) {
@@ -887,4 +968,36 @@ export function connectDeployWebSocket(sessionId: string, callbacks: WsCallbacks
   };
 
   return ws;
+}
+
+// ---------------------------------------------------------------------------
+// AI Settings
+// ---------------------------------------------------------------------------
+
+export interface AISettingsStatus {
+  configured: boolean;
+  endpoint: string;
+  model: string;
+  key_set: boolean;
+}
+
+export async function getAISettings(): Promise<AISettingsStatus> {
+  return request<AISettingsStatus>('/api/settings/ai');
+}
+
+export async function saveAISettings(endpoint: string, apiKey: string, model: string = 'gpt-4o') {
+  return request<{ success: boolean; configured: boolean }>('/api/settings/ai', {
+    method: 'POST',
+    body: JSON.stringify({ endpoint, api_key: apiKey, model }),
+  });
+}
+
+export async function clearAISettings() {
+  return request<{ success: boolean; configured: boolean }>('/api/settings/ai', {
+    method: 'DELETE',
+  });
+}
+
+export async function getAIStatus(): Promise<{ available: boolean }> {
+  return request<{ available: boolean }>('/api/ai/status');
 }

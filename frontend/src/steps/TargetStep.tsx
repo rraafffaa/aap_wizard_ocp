@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ServerIcon,
   CheckCircleIcon,
@@ -8,6 +8,14 @@ import {
 import type { DeploymentConfig } from '../types';
 import { FormField, TextInput, NumberInput } from '../components/FormField';
 import { verifySSH, type SSHVerifyResult } from '../api';
+import { StatusFeed } from '../components/StatusFeed';
+import { useOperationStatus } from '../hooks/useOperationStatus';
+
+const SSH_STEPS = [
+  { id: 'resolve', label: 'Resolving hostname' },
+  { id: 'ssh', label: 'Establishing SSH connection' },
+  { id: 'verify', label: 'Verifying host identity' },
+];
 
 interface Props {
   config: DeploymentConfig;
@@ -18,6 +26,22 @@ export function TargetStep({ config, updateConfig }: Props) {
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<SSHVerifyResult | null>(null);
   const [error, setError] = useState('');
+  const { items, startStep, completeStep, failStep, reset, isRunning, isComplete } =
+    useOperationStatus(SSH_STEPS);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [showFeed, setShowFeed] = useState(false);
+
+  // Clear timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+    };
+  }, []);
+
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
 
   const canVerify =
     config.target_host.trim() !== '' &&
@@ -28,6 +52,22 @@ export function TargetStep({ config, updateConfig }: Props) {
     setVerifying(true);
     setResult(null);
     setError('');
+    setShowFeed(true);
+    clearAllTimeouts();
+    reset();
+    startStep('resolve');
+
+    // Simulate staged progress while the actual SSH call runs
+    const t1 = setTimeout(() => {
+      completeStep('resolve');
+      startStep('ssh');
+    }, 2000);
+    const t2 = setTimeout(() => {
+      completeStep('ssh');
+      startStep('verify');
+    }, 5000);
+    timeoutsRef.current = [t1, t2];
+
     try {
       const res = await verifySSH({
         host: config.target_host,
@@ -35,13 +75,23 @@ export function TargetStep({ config, updateConfig }: Props) {
         password: config.target_password,
         port: config.target_ssh_port,
       });
+      clearAllTimeouts();
+      // Complete all steps on success
+      completeStep('resolve');
+      completeStep('ssh');
+      completeStep('verify', res.connected ? 'Connected' : undefined);
       setResult(res);
     } catch (err: unknown) {
-      setError((err as Error).message || 'Could not reach the backend. Is the server running on port 8000?');
+      clearAllTimeouts();
+      const message = (err as Error).message || 'Could not reach the backend. Is the server running on port 8000?';
+      // Fail whichever step is currently running (or the last one)
+      const runningItem = items.find(i => i.status === 'running');
+      failStep(runningItem?.id ?? 'resolve', message);
+      setError(message);
     } finally {
       setVerifying(false);
     }
-  }, [config.target_host, config.target_user, config.target_password, config.target_ssh_port]);
+  }, [config.target_host, config.target_user, config.target_password, config.target_ssh_port, items, reset, startStep, completeStep, failStep]);
 
   return (
     <div className="aap-step">
@@ -123,6 +173,12 @@ export function TargetStep({ config, updateConfig }: Props) {
             {verifying ? 'Connecting...' : 'Verify Connection'}
           </button>
         </div>
+
+        {showFeed && (isRunning || isComplete) && (
+          <div className="aap-mt-md">
+            <StatusFeed items={items} compact />
+          </div>
+        )}
 
         {error && (
           <div className="aap-alert aap-alert--danger aap-mt-md" role="alert">
