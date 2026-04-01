@@ -32,7 +32,7 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
           onClick={onNext}
           aria-label="Get started with the deployment wizard"
         >
-          Get Started
+          Get started
           <ArrowRightIcon />
         </button>
         {lastDeploy && onViewPastDeploy && (
@@ -76,7 +76,7 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
           </div>
           <div className="aap-feature-card__title">Guided Setup</div>
           <div className="aap-feature-card__text">
-            Intelligent defaults and real-time validation — no manual inventory editing.
+            Smart defaults and real-time validation.
           </div>
         </div>
         <div className="aap-feature-card">
@@ -85,7 +85,7 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
           </div>
           <div className="aap-feature-card__title">Pre-flight Checks</div>
           <div className="aap-feature-card__text">
-            Validates system requirements and connectivity before deployment.
+            Validates requirements before deployment.
           </div>
         </div>
         <div className="aap-feature-card">
@@ -94,7 +94,7 @@ export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
           </div>
           <div className="aap-feature-card__title">Live Progress</div>
           <div className="aap-feature-card__text">
-            Streaming logs, phase tracking, and instant error feedback.
+            Streaming logs and phase tracking.
           </div>
         </div>
       </div>

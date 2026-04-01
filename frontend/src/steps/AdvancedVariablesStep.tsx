@@ -455,18 +455,8 @@ export function AdvancedVariablesStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">Advanced Variables</h2>
         <p className="aap-step__description">
-          Optional {isOCP ? 'operator CR' : 'installer'} variables for fine-grained control. Each section links to the official
-          AAP 2.6 documentation. Only modify these if you need to override defaults.
+          Optional overrides — only modified values are included in the {isOCP ? 'custom resource' : 'inventory file'}.
         </p>
-      </div>
-
-      <div className="aap-alert aap-alert--info" style={{ marginBottom: 24 }}>
-        <InfoCircleIcon className="aap-alert__icon" />
-        <div className="aap-alert__content">
-          <div className="aap-alert__title">All variables are optional</div>
-          Variables left at their defaults will not be written to the {isOCP ? 'custom resource' : 'inventory file'}.
-          Only modified values are included. Expand a section to view and edit its variables.
-        </div>
       </div>
 
       {/* Common / Registry — containerized only (podman registry settings) */}

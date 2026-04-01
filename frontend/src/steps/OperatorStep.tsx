@@ -170,8 +170,7 @@ export function OperatorStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">AAP Operator</h2>
         <p className="aap-step__description">
-          The AAP Operator manages the lifecycle of your Ansible Automation Platform deployment on OpenShift.
-          It must be installed from OperatorHub before deploying AAP.
+          Install the operator from OperatorHub before deploying.
         </p>
       </div>
 
@@ -190,7 +189,7 @@ export function OperatorStep({ config, updateConfig }: Props) {
             <option value="stable-2.5">stable-2.5</option>
           </select>
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            The operator channel determines which version of AAP is deployed.
+            Determines the AAP version deployed.
           </p>
         </div>
       </div>
@@ -251,25 +250,6 @@ export function OperatorStep({ config, updateConfig }: Props) {
         )}
       </div>
 
-      <div className="aap-card">
-        <h3 className="aap-card__title">What the Operator Manages</h3>
-        <div className="aap-deploy-phases" role="list">
-          {[
-            { title: 'Deployment Lifecycle', desc: 'Creates and manages all AAP component pods (Gateway, Controller, Hub, EDA).' },
-            { title: 'Rolling Upgrades', desc: 'Handles version upgrades with zero-downtime rolling updates.' },
-            { title: 'Database Migrations', desc: 'Automatically runs schema migrations when upgrading.' },
-            { title: 'Health Monitoring', desc: 'Continuously reconciles the desired state and restarts failed pods.' },
-          ].map((item, i) => (
-            <div key={i} className="aap-phase" role="listitem">
-              <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">{i + 1}</div>
-              <div>
-                <div className="aap-card__title aap-mb-md">{item.title}</div>
-                <div className="aap-text-muted aap-text-sm">{item.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

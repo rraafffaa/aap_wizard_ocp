@@ -67,9 +67,6 @@ export function ReviewStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <header className="aap-step__header">
         <h2 className="aap-step__title">Review Configuration</h2>
-        <p className="aap-step__description">
-          Verify your settings before deployment.
-        </p>
       </header>
 
       {!apiAvailable && (
@@ -127,9 +124,6 @@ export function ReviewStep({ config, updateConfig }: Props) {
         <section className="aap-step__section">
           <div className="aap-card">
             <h3 className="aap-card__title">SSH Target</h3>
-            <p className="aap-card__description aap-mb-md">
-              Remote RHEL host over SSH.
-            </p>
             <div className="aap-form-row">
               <FormField label="Target Host IP / Hostname" required>
                 <TextInput
@@ -163,9 +157,6 @@ export function ReviewStep({ config, updateConfig }: Props) {
           <div className="aap-card__header">
             <div>
               <h3 className="aap-card__title">Deployment Mode</h3>
-              <p className="aap-card__description aap-mt-sm">
-                Validates config and generates inventory without installing.
-              </p>
             </div>
             <SwitchInput
               checked={config.dry_run}

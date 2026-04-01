@@ -78,6 +78,15 @@ def generate_cr(config: dict) -> dict:
     if hub_storage_size != "100Gi":
         hub_config["storage_size"] = hub_storage_size
 
+    # Hub file storage requires RWX — if the selected storage class is RBD (RWO only),
+    # use CephFS for hub file storage instead
+    storage_class = ocp.get("storage_class", "")
+    if storage_class and "ceph-rbd" in storage_class:
+        cephfs_class = storage_class.replace("ceph-rbd", "cephfs").removesuffix("-immediate")
+        hub_config["file_storage_storage_class"] = cephfs_class
+    elif storage_class:
+        hub_config["file_storage_storage_class"] = storage_class
+
     if hub_config:
         spec["hub"] = hub_config
 

@@ -15,6 +15,7 @@ import { startDeploy, cancelDeploy, getDeployStatus, connectDeployWebSocket, dia
 
 interface Props {
   config: DeploymentConfig;
+  updateConfig: (partial: Partial<DeploymentConfig>) => void;
   sessionId: string;
   setSessionId: (id: string) => void;
   onComplete: () => void;
@@ -86,7 +87,7 @@ function renderMarkdownLine(line: string): React.ReactNode {
   return parts;
 }
 
-export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack }: Props) {
+export function DeployStep({ config, updateConfig, sessionId, setSessionId, onComplete, onBack }: Props) {
   const [phases, setPhases] = useState<Phase[]>(INITIAL_PHASES);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [progress, setProgress] = useState(0);
@@ -132,6 +133,9 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
         setStatus('completed');
         setProgress(100);
         setPhases(prev => prev.map(p => ({ ...p, status: 'complete' })));
+        if (st.access_url) {
+          updateConfig({ ocp: { ...config.ocp, access_url: st.access_url } });
+        }
         if (pollRef.current) clearInterval(pollRef.current);
       } else if (st.status === 'failed') {
         setStatus('failed');
@@ -186,6 +190,9 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
       case 'complete':
         setStatus('completed');
         setProgress(100);
+        if (event.access_url) {
+          updateConfig({ ocp: { ...config.ocp, access_url: event.access_url } });
+        }
         if (pollRef.current) clearInterval(pollRef.current);
         break;
       case 'error':
@@ -228,26 +235,29 @@ export function DeployStep({ config, sessionId, setSessionId, onComplete, onBack
       return;
     }
 
-    // Start status polling as backup for WebSocket
+    // Start status polling
     pollRef.current = setInterval(() => pollStatus(sid), 3000);
 
-    try {
-      wsRef.current = connectDeployWebSocket(sid, {
-        onMessage: handleWsMessage,
-        onError: (errMsg) => {
-          setWsConnected(false);
-          setLogLines(prev => [...prev, `[WARN] ${errMsg}`]);
-          // don't set failed — polling will recover
-        },
-        onClose: () => {
-          setWsConnected(false);
-          // Final poll to get latest status
-          setTimeout(() => pollStatus(sid), 1000);
-        },
-      });
-    } catch {
-      // WebSocket failed to connect — polling is the fallback
-      setLogLines(prev => [...prev, '[WARN] WebSocket unavailable — using polling for status updates']);
+    // OCP deploys use polling only (no WebSocket streaming support)
+    if (!isOCP) {
+      try {
+        wsRef.current = connectDeployWebSocket(sid, {
+          onMessage: handleWsMessage,
+          onError: (errMsg) => {
+            setWsConnected(false);
+            setLogLines(prev => [...prev, `[WARN] ${errMsg}`]);
+            // don't set failed — polling will recover
+          },
+          onClose: () => {
+            setWsConnected(false);
+            // Final poll to get latest status
+            setTimeout(() => pollStatus(sid), 1000);
+          },
+        });
+      } catch {
+        // WebSocket failed to connect — polling is the fallback
+        setLogLines(prev => [...prev, '[WARN] WebSocket unavailable — using polling for status updates']);
+      }
     }
   };
 

@@ -35,6 +35,7 @@ import { ReplicasStep } from './steps/ReplicasStep';
 import { OnboardingStep } from './steps/OnboardingStep';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProfileManager } from './components/ProfileManager';
+import { ConfirmModal } from './components/ConfirmModal';
 import { SettingsModal } from './components/SettingsModal';
 import { setAuthToken, getStoredToken, isTokenExpired } from './api';
 
@@ -71,6 +72,7 @@ function AuthenticatedWizard() {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [viewingPastDeploy, setViewingPastDeploy] = useState<DeploymentRecord | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const savedState = useRef(loadSavedConfig());
   const stepKey = useRef(0);
 
@@ -210,6 +212,7 @@ function AuthenticatedWizard() {
         return (
           <DeployStep
             config={config}
+            updateConfig={updateConfig}
             sessionId={deploySessionId}
             setSessionId={setDeploySessionId}
             onComplete={goNext}
@@ -364,15 +367,7 @@ function AuthenticatedWizard() {
             </button>
             <button
               className="aap-btn aap-btn--tertiary"
-              onClick={() => {
-                if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-                  clearSavedConfig();
-                  setConfig(getDefaultConfig());
-                  setCompletedSteps(new Set());
-                  stepKey.current++;
-                  setCurrentStep('welcome');
-                }
-              }}
+              onClick={() => setShowCancelConfirm(true)}
             >
               Cancel
             </button>
@@ -388,6 +383,22 @@ function AuthenticatedWizard() {
         </footer>
       )}
 
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        title="Cancel wizard?"
+        message="Any unsaved changes will be lost. You can resume from a saved session later."
+        confirmLabel="Yes, cancel"
+        variant="warning"
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          clearSavedConfig();
+          setConfig(getDefaultConfig());
+          setCompletedSteps(new Set());
+          stepKey.current++;
+          setCurrentStep('welcome');
+        }}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );

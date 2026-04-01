@@ -67,16 +67,12 @@ export function ReplicasStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">Scaling & Resources</h2>
-        <p className="aap-step__description">
-          Configure the number of replicas for each AAP component and the resource limits.
-          More replicas provide higher availability and throughput.
-        </p>
       </div>
 
       <div className="aap-card aap-mb-lg">
         <h3 className="aap-card__title">Component Replicas</h3>
         <p className="aap-text-muted aap-text-sm aap-mb-lg">
-          Set the replica count for each component. Use 1 for development, 2+ for production HA.
+          1 for dev, 2+ for production HA.
         </p>
 
         <ReplicaRow
@@ -113,7 +109,7 @@ export function ReplicasStep({ config, updateConfig }: Props) {
       <div className="aap-card aap-mb-lg">
         <h3 className="aap-card__title">Resource Preset</h3>
         <p className="aap-text-muted aap-text-sm aap-mb-md">
-          Choose a resource allocation preset for the Controller component. This sets CPU and memory limits per pod.
+          CPU and memory limits per Controller pod.
         </p>
 
         <div className="aap-selection-grid aap-selection-grid--3col" role="radiogroup" aria-label="Resource preset">

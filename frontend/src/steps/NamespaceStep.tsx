@@ -23,10 +23,6 @@ export function NamespaceStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">Namespace & Storage</h2>
-        <p className="aap-step__description">
-          Configure the OpenShift namespace where AAP will be deployed and the storage settings
-          for persistent data.
-        </p>
       </div>
 
       <div className="aap-card aap-mb-lg">
@@ -44,7 +40,7 @@ export function NamespaceStep({ config, updateConfig }: Props) {
             onChange={(e) => updateOCP({ namespace: e.target.value })}
           />
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            The namespace will be created if it doesn't exist. Use a dedicated namespace for AAP.
+            Created automatically if it doesn't exist.
           </p>
         </div>
       </div>
@@ -64,8 +60,7 @@ export function NamespaceStep({ config, updateConfig }: Props) {
             onChange={(e) => updateOCP({ storage_class: e.target.value })}
           />
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            The Kubernetes StorageClass for PersistentVolumeClaims. Common values: <code>gp3-csi</code> (AWS),
-            <code> managed-premium</code> (Azure), <code> standard</code> (GCP).
+            e.g. <code>gp3-csi</code> (AWS), <code>managed-premium</code> (Azure), <code>standard</code> (GCP)
           </p>
         </div>
       </div>
@@ -73,7 +68,7 @@ export function NamespaceStep({ config, updateConfig }: Props) {
       <div className="aap-card aap-mb-lg">
         <h3 className="aap-card__title">Storage Sizing</h3>
         <p className="aap-text-muted aap-text-sm aap-mb-md">
-          Choose a preset or customize PVC sizes for each component.
+          Choose a preset or customize PVC sizes.
         </p>
 
         <div className="aap-selection-grid aap-selection-grid--3col aap-mb-lg" role="radiogroup" aria-label="Storage preset">
@@ -143,7 +138,7 @@ export function NamespaceStep({ config, updateConfig }: Props) {
             <option value="azure">Azure Blob Storage</option>
           </select>
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            File storage uses a PersistentVolumeClaim. S3 or Azure Blob are recommended for multi-replica Hub deployments.
+            S3 or Azure Blob recommended for multi-replica Hub.
           </p>
         </div>
       </div>

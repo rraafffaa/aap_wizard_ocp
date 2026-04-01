@@ -31,16 +31,16 @@ export function TopologyStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">Deployment Topology</h2>
         <p className="aap-step__description">
-          Select the topology that fits your needs. Enterprise is recommended for production.
+          Enterprise is recommended for production workloads.
         </p>
       </div>
 
       <div className="aap-card aap-mb-lg">
         <div className="aap-card__header">
           <div>
-            <div className="aap-card__title">Not sure which topology to pick?</div>
+            <div className="aap-card__title">Need help choosing?</div>
             <p className="aap-card__description aap-mt-sm">
-              Use the sizing calculator to get a recommendation based on your workload.
+              Get a recommendation based on your workload size.
             </p>
           </div>
           <button
@@ -123,15 +123,12 @@ export function TopologyStep({ config, updateConfig }: Props) {
           </div>
           <div className="aap-selection-card__title">Growth (All-in-One)</div>
           <div className="aap-selection-card__description">
-            All components on a single RHEL host. Ideal for getting started, development, and smaller deployments.
+            Single host — ideal for dev and small deployments.
           </div>
           <ul className="aap-selection-card__features">
-            <li><CheckIcon aria-hidden="true" /> Single host deployment</li>
-            <li><CheckIcon aria-hidden="true" /> Minimal infrastructure required</li>
+            <li><CheckIcon aria-hidden="true" /> All components on one host</li>
             <li><CheckIcon aria-hidden="true" /> Managed PostgreSQL included</li>
-            <li><CheckIcon aria-hidden="true" /> All components co-located</li>
             <li><CheckIcon aria-hidden="true" /> 16 GB RAM / 4 CPUs minimum</li>
-            <li><CheckIcon aria-hidden="true" /> Quick setup in under 30 minutes</li>
           </ul>
         </div>
 
@@ -152,15 +149,12 @@ export function TopologyStep({ config, updateConfig }: Props) {
           </div>
           <div className="aap-selection-card__title">Enterprise</div>
           <div className="aap-selection-card__description">
-            Multi-node deployment with redundancy and high availability.
+            Multi-node with HA and dedicated execution nodes.
           </div>
           <ul className="aap-selection-card__features">
             <li><CheckIcon aria-hidden="true" /> Multi-node redundancy</li>
-            <li><CheckIcon aria-hidden="true" /> Dedicated execution nodes</li>
-            <li><CheckIcon aria-hidden="true" /> Hop nodes for network segmentation</li>
-            <li><CheckIcon aria-hidden="true" /> External database support</li>
-            <li><CheckIcon aria-hidden="true" /> Redis cluster mode available</li>
-            <li><CheckIcon aria-hidden="true" /> Horizontal scaling capability</li>
+            <li><CheckIcon aria-hidden="true" /> Dedicated execution & hop nodes</li>
+            <li><CheckIcon aria-hidden="true" /> External database + Redis cluster</li>
           </ul>
         </div>
       </div>

@@ -19,10 +19,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
   return (
     <div className="aap-step">
       <div className="aap-step__header">
-        <h2 className="aap-step__title">Database Configuration</h2>
-        <p className="aap-step__description aap-text-muted aap-text-sm">
-          Configure PostgreSQL for AAP data storage.
-        </p>
+        <h2 className="aap-step__title">Database</h2>
       </div>
 
       {(isGrowth || isOCP) && (
@@ -64,7 +61,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
               }}
             >
               <div className="aap-selection-card__indicator" />
-              <div className="aap-selection-card__title">External (BYO)</div>
+              <div className="aap-selection-card__title">External (bring your own)</div>
               <div className="aap-selection-card__description">
                 Bring your own PostgreSQL 15, 16, or 17 instance.
               </div>
@@ -81,7 +78,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
           <div className="aap-alert__content">
             <div className="aap-alert__title">External Database Required</div>
             <p className="aap-text-muted aap-text-sm">
-              Enterprise topology requires an external PostgreSQL database for performance and independent scaling.
+              Enterprise topology requires an external PostgreSQL instance.
             </p>
           </div>
         </div>
@@ -95,8 +92,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
           <div className="aap-alert__content">
             <div className="aap-alert__title">Operator-Managed Database</div>
             <p className="aap-text-muted aap-text-sm">
-              On OpenShift, the AAP Operator automatically deploys and manages a PostgreSQL instance.
-              You can optionally configure an external database below, or leave this as default.
+              The operator manages PostgreSQL by default. External database is optional.
             </p>
           </div>
         </div>
@@ -150,8 +146,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
             </FormField>
           </div>
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            Requires PostgreSQL 15, 16, or 17 with ICU support enabled. External databases using PostgreSQL 16 or 17
-            must use external backup/restore processes.
+            Requires PostgreSQL 15–17 with ICU support.
           </p>
         </div>
       )}
@@ -161,7 +156,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
         <div className="aap-card__header">
           <h3 className="aap-card__title">Component Database Credentials</h3>
           <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-            Each component uses its own database credentials.
+            Per-component database names and passwords.
           </p>
         </div>
 

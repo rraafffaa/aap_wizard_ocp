@@ -54,9 +54,6 @@ export function CredentialsStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <header className="aap-step__header">
         <h2 className="aap-step__title">Admin Credentials</h2>
-        <p className="aap-step__description">
-          Set admin passwords for each component.
-        </p>
       </header>
 
       <section className="aap-step__section">
@@ -70,7 +67,7 @@ export function CredentialsStep({ config, updateConfig }: Props) {
               aria-label="Generate unique passwords for each component"
             >
               <KeyIcon aria-hidden />
-              Generate unique passwords for each component
+              Generate passwords
             </button>
             <span className="aap-text-muted aap-text-sm">— or —</span>
             <FormField label="Shared password" required={false}>

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircleIcon, ExternalLinkAltIcon, TrashIcon, PlusCircleIcon, ExportIcon } from '@patternfly/react-icons';
 import type { DeploymentConfig, DeploymentRecord } from '../types';
 import { downloadTextFile, exportConfigToFile } from '../types';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 interface Props {
   config: DeploymentConfig;
@@ -11,39 +12,40 @@ interface Props {
 }
 
 export function CompleteStep({ config, deploymentRecord, onDelete, onNewDeployment }: Props) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isOCP = config.platform === 'openshift';
   const host = config.target_host || config.gateway.hosts[0];
   const port = config.network.https_port;
   const gatewayUrl = isOCP
-    ? config.ocp.api_url
+    ? config.ocp.access_url || `https://${config.ocp.namespace ? `aap-${config.ocp.namespace}` : 'aap'}.apps.${config.ocp.api_url.replace(/^https?:\/\/api\./, '').replace(/:6443\/?$/, '')}`
     : `https://${host}${port === 443 ? '' : `:${port}`}`;
   const isHistorical = !!deploymentRecord;
 
   const nextSteps = [
     {
       step: '1',
-      title: 'Upload your subscription manifest',
-      desc: 'Upload your subscription manifest in the Gateway to activate your subscription.',
+      title: 'Upload subscription manifest',
+      desc: 'Activate your subscription in the Gateway.',
     },
     {
       step: '2',
-      title: 'Create your first project',
-      desc: 'Connect a Git repository containing your Ansible playbooks and roles to the Automation Controller.',
+      title: 'Create a project',
+      desc: 'Link a Git repo with your playbooks.',
     },
     {
       step: '3',
       title: 'Add managed hosts',
-      desc: 'Create an inventory with the hosts you want to manage and configure machine credentials for SSH access.',
+      desc: 'Create an inventory and add credentials.',
     },
     {
       step: '4',
       title: 'Run your first job',
-      desc: 'Create a job template, select your project and inventory, then launch your first automation job.',
+      desc: 'Create a job template and launch it.',
     },
     {
       step: '5',
       title: 'Explore Event-Driven Ansible',
-      desc: 'Set up webhooks and event sources to automatically trigger automation based on real-time events.',
+      desc: 'Trigger automation from webhooks and events.',
     },
   ];
 
@@ -150,11 +152,7 @@ export function CompleteStep({ config, deploymentRecord, onDelete, onNewDeployme
             <button
               type="button"
               className="aap-btn aap-btn--danger"
-              onClick={() => {
-                if (confirm('Delete this deployment record? This only removes it from the wizard — it does not affect the running AAP instance.')) {
-                  onDelete();
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               aria-label="Delete this deployment record"
             >
               <TrashIcon aria-hidden="true" /> Delete Record
@@ -260,6 +258,17 @@ export function CompleteStep({ config, deploymentRecord, onDelete, onNewDeployme
           ))}
         </div>
       </div>
+      {onDelete && (
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          title="Delete deployment record?"
+          message="This only removes it from the wizard — it does not affect the running AAP instance."
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={() => { setShowDeleteConfirm(false); onDelete(); }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }

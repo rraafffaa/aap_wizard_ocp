@@ -106,19 +106,9 @@ function OCPPreflightStep({ config }: { config: DeploymentConfig }) {
       <header className="aap-step__header">
         <h2 className="aap-step__title">Pre-flight Checks</h2>
         <p className="aap-step__description">
-          Validate OpenShift cluster readiness for AAP deployment.
+          Validate cluster readiness at <strong className="aap-text-mono">{config.ocp.api_url}</strong>.
         </p>
       </header>
-
-      <div className="aap-alert aap-alert--info aap-mb-lg">
-        <span className="aap-alert__icon" aria-hidden><InfoCircleIcon /></span>
-        <div className="aap-alert__content">
-          <span className="aap-text-sm">
-            Checks run against your OpenShift cluster at <strong className="aap-text-mono">{config.ocp.api_url}</strong> to
-            verify the operator, namespace, and storage are ready.
-          </span>
-        </div>
-      </div>
 
       <section className="aap-step__section">
         <button
@@ -310,19 +300,9 @@ function ContainerizedPreflightStep({ config, updateConfig }: Props) {
       <header className="aap-step__header">
         <h2 className="aap-step__title">Pre-flight Checks</h2>
         <p className="aap-step__description">
-          Validate system requirements on <strong>{targetLabel}</strong> via SSH.
+          Validate requirements on <strong className="aap-text-mono">{targetLabel}</strong>.
         </p>
       </header>
-
-      <div className="aap-alert aap-alert--info aap-mb-lg">
-        <span className="aap-alert__icon" aria-hidden><InfoCircleIcon /></span>
-        <div className="aap-alert__content">
-          <span className="aap-text-sm">
-            Checks run on <strong className="aap-text-mono">{config.target_host}</strong> over SSH.
-            {' '}If checks fail, click <strong>Prepare Host</strong> to auto-install missing dependencies.
-          </span>
-        </div>
-      </div>
 
       <section className="aap-step__section">
         <div className="aap-flex-row aap-mb-lg aap-flex-row--wrap">
@@ -441,17 +421,6 @@ function ContainerizedPreflightStep({ config, updateConfig }: Props) {
             </ul>
           </div>
 
-          {hasFailures && (
-            <div className="aap-alert aap-alert--warning aap-mb-md">
-              <span className="aap-alert__icon" aria-hidden><WrenchIcon /></span>
-              <div className="aap-alert__content">
-                <div className="aap-alert__title">Auto-fix available</div>
-                <span className="aap-text-sm">
-                  Click <strong>Prepare Host</strong> to install missing dependencies and re-run checks.
-                </span>
-              </div>
-            </div>
-          )}
 
         </>
       )}

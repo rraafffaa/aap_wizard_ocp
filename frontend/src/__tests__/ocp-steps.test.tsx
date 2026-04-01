@@ -69,11 +69,11 @@ describe('PlatformStep', () => {
     expect(screen.queryByText('Infrastructure')).not.toBeInTheDocument();
   });
 
-  it('shows correct "What Happens Next" for OpenShift platform', () => {
+  it('shows documentation links for both platforms', () => {
     const config = createMockConfig({ platform: 'openshift' });
     render(<PlatformStep config={config} updateConfig={mockUpdateConfig} />);
-    expect(screen.getByText('Connect to OpenShift')).toBeInTheDocument();
-    expect(screen.getByText('Install AAP Operator')).toBeInTheDocument();
+    expect(screen.getByText('Containerized Installation Guide')).toBeInTheDocument();
+    expect(screen.getByText('OpenShift Installation Guide')).toBeInTheDocument();
   });
 });
 
@@ -232,14 +232,11 @@ describe('OperatorStep', () => {
     expect(screen.getByRole('button', { name: /check status/i })).toBeInTheDocument();
   });
 
-  it('shows operator management info', () => {
+  it('shows operator channel and status sections', () => {
     const config = createMockConfig();
     render(<OperatorStep config={config} updateConfig={mockUpdateConfig} />);
-    expect(screen.getByText('What the Operator Manages')).toBeInTheDocument();
-    expect(screen.getByText('Deployment Lifecycle')).toBeInTheDocument();
-    expect(screen.getByText('Rolling Upgrades')).toBeInTheDocument();
-    expect(screen.getByText('Database Migrations')).toBeInTheDocument();
-    expect(screen.getByText('Health Monitoring')).toBeInTheDocument();
+    expect(screen.getByText('Operator Channel')).toBeInTheDocument();
+    expect(screen.getByText('Operator Status')).toBeInTheDocument();
   });
 
   it('updates channel when selector changes', () => {
@@ -303,11 +300,11 @@ describe('ReplicasStep', () => {
   it('resource presets render and are selectable', () => {
     const config = createMockConfig();
     render(<ReplicasStep config={config} updateConfig={mockUpdateConfig} />);
-    expect(screen.getByText('Small')).toBeInTheDocument();
-    expect(screen.getByText('Medium')).toBeInTheDocument();
-    expect(screen.getByText('Large')).toBeInTheDocument();
+    expect(screen.getByText('Resource Preset')).toBeInTheDocument();
+    const presetCards = screen.getAllByRole('radio');
+    expect(presetCards.length).toBeGreaterThanOrEqual(3);
 
-    const largePreset = screen.getByText('Large').closest('.aap-selection-card');
+    const largePreset = screen.getAllByText('Large')[0].closest('.aap-selection-card');
     fireEvent.click(largePreset!);
     expect(mockUpdateConfig).toHaveBeenCalledWith({
       ocp: expect.objectContaining({ controller_resource_preset: 'large' }),

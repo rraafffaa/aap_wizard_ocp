@@ -60,9 +60,6 @@ export function HostsStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">Hosts</h2>
-        <p className="aap-step__description">
-          Define the AAP component hosts for this topology.
-        </p>
       </div>
 
       <div className="aap-step__section">
@@ -76,7 +73,7 @@ export function HostsStep({ config, updateConfig }: Props) {
           <div className="aap-card__header">
             <h3 className="aap-card__title">All-in-One Host</h3>
             <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-              All AAP components (Gateway, Controller, Hub, EDA, Database) will be installed on this single host.
+              All components installed on a single host.
             </p>
           </div>
           <FormField label="Hostname (FQDN)" required helperText="Must be a fully qualified domain name resolvable via DNS">
@@ -94,7 +91,7 @@ export function HostsStep({ config, updateConfig }: Props) {
             <div className="aap-card__header">
               <h3 className="aap-card__title">Platform Gateway Hosts</h3>
               <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-                The gateway provides the unified entry point for all AAP services. Enterprise topology requires at least 2 for redundancy.
+                At least 2 recommended for redundancy.
               </p>
             </div>
             {config.gateway.hosts.map((host, i) => (
@@ -227,7 +224,7 @@ export function HostsStep({ config, updateConfig }: Props) {
             <div className="aap-card__header">
               <h3 className="aap-card__title">Execution & Hop Nodes</h3>
               <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-                Execution nodes run automation jobs. Hop nodes relay traffic between the controller mesh and isolated networks.
+                Execution nodes run jobs. Hop nodes relay mesh traffic.
               </p>
             </div>
             {config.execution_nodes.map((node, i) => (
@@ -294,7 +291,7 @@ export function HostsStep({ config, updateConfig }: Props) {
           <div className="aap-card__header">
             <h3 className="aap-card__title">SSH Connection Settings</h3>
             <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-              Configure SSH access for the installer to connect to remote hosts.
+              SSH access for remote host connections.
             </p>
           </div>
           {config.hosts.length === 0 ? (

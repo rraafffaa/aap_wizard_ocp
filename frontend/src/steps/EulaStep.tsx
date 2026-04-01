@@ -69,9 +69,6 @@ export function EulaStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">License Agreement</h2>
-        <p className="aap-step__description">
-          Review and accept the EULA to continue.
-        </p>
       </div>
 
       <div className="aap-card aap-mb-lg">

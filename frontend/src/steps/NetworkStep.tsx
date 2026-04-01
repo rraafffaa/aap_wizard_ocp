@@ -55,9 +55,6 @@ export function NetworkStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">Network & TLS</h2>
-        <p className="aap-step__description aap-text-muted aap-text-sm">
-          Configure network ports and TLS settings.
-        </p>
       </div>
 
       {/* Port configuration */}
@@ -82,7 +79,7 @@ export function NetworkStep({ config, updateConfig }: Props) {
               max={65535}
             />
           </FormField>
-          <FormField label="Receptor Port" helperText="Mesh network communication (default: 27199)">
+          <FormField label="Receptor Port" helperText="Receptor handles mesh communication between AAP nodes (default: 27199)">
             <NumberInput
               value={config.network.receptor_port}
               onChange={(v) => updateNetwork({ receptor_port: v })}
@@ -115,7 +112,7 @@ export function NetworkStep({ config, updateConfig }: Props) {
               </span>
               <div className="aap-alert__content">
                 <p className="aap-text-muted aap-text-sm">
-                  Self-signed certificates are generated if none are provided. For production, use CA-signed certificates.
+                  Self-signed certificates are generated if none are provided.
                 </p>
               </div>
             </div>
@@ -162,9 +159,6 @@ export function NetworkStep({ config, updateConfig }: Props) {
         <div className="aap-card__header">
           <div>
             <h3 className="aap-card__title">Required Firewall Ports</h3>
-            <p className="aap-card__description aap-text-muted aap-text-sm">
-              Open these ports in your firewall for AAP.
-            </p>
           </div>
           {canCheckPorts && (
             <button

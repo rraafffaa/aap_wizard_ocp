@@ -45,7 +45,7 @@ export function ComponentsStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">Platform Components</h2>
         <p className="aap-step__description aap-text-muted aap-text-sm">
-          All four components are required. Configure options below.
+          All four components are required.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export function ComponentsStep({ config, updateConfig }: Props) {
         <SwitchInput
           checked={config.hub.seed_collections}
           onChange={(v) => updateConfig({ hub: { ...config.hub, seed_collections: v } })}
-          label="Seed certified collections after installation"
+          label="Pre-install certified content collections"
         />
         <p className="aap-text-muted aap-text-sm aap-mt-sm">
           Requires 32 GB RAM and can take 45+ minutes.

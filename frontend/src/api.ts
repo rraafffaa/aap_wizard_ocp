@@ -919,7 +919,8 @@ export async function getDeployStatus(sessionId: string) {
 }
 
 export async function cancelDeploy(sessionId: string) {
-  return request<{ status: string }>(`/api/deploy/${sessionId}/cancel`, {
+  const base = sessionId.startsWith('ocp-') ? '/api/ocp/deploy' : '/api/deploy';
+  return request<{ status: string }>(`${base}/${sessionId}/cancel`, {
     method: 'POST',
   });
 }

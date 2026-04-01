@@ -1296,9 +1296,10 @@ async def ocp_deploy_start(req: OCPDeployStartRequest):
             "cluster_url": ocp.get("api_url", ""),
             "token": ocp.get("token", ""),
             "namespace": ocp.get("namespace", "aap"),
-            "operator_channel": ocp.get("operator_channel", "stable-2.5"),
+            "operator_channel": ocp.get("operator_channel", "stable-2.6"),
             "storage_class": ocp.get("storage_class", ""),
             "cr": cr,
+            "wizard_config": raw,  # Full config for Secret generation
         }
 
         deployer = OCPDeployer(config=deployer_config, session_id=f"ocp-{int(time.time() * 1000)}")
@@ -1342,9 +1343,20 @@ async def ocp_deploy_status(session_id: str):
         "current_phase": deployer._current_phase,
         "progress": deployer._progress,
         "error": deployer._error,
+        "access_url": deployer._access_url,
         "log_lines": deployer._log_lines[-200:],
         "cancelled": deployer._cancelled.is_set(),
     }
+
+
+@app.post("/api/ocp/deploy/{session_id}/cancel")
+async def ocp_deploy_cancel(session_id: str):
+    """Cancel a running OCP deployment."""
+    deployer = OCP_DEPLOY_SESSIONS.get(session_id)
+    if not deployer:
+        raise HTTPException(404, "Session not found")
+    deployer.cancel()
+    return {"status": "cancelling", "session_id": session_id}
 
 
 @app.post("/api/ocp/preflight")

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { CheckCircleIcon, ExclamationCircleIcon, SyncAltIcon } from '@patternfly/react-icons';
 import type { DeploymentConfig, OCPClusterInfo } from '../types';
-import { getStoredToken } from '../api';
+import { getStoredToken, clearAuth } from '../api';
 import { StatusFeed } from '../components/StatusFeed';
 import { useOperationStatus } from '../hooks/useOperationStatus';
 
@@ -68,8 +68,19 @@ export function ClusterStep({ config, updateConfig }: Props) {
         },
         body: JSON.stringify({ api_url: ocp.api_url, token: ocp.token }),
       });
-      const data = await res.json();
       clearStepTimers();
+      if (res.status === 401) {
+        clearAuth();
+        window.location.reload();
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.detail || data.error || `Server error (${res.status})`;
+        failStep(activeStepRef.current, msg);
+        setError(msg);
+        return;
+      }
       if (data.connected) {
         completeStep('connect');
         completeStep('auth');
@@ -104,12 +115,7 @@ export function ClusterStep({ config, updateConfig }: Props) {
   return (
     <div className="aap-step">
       <div className="aap-step__header">
-        <h2 className="aap-step__title">Connect to OpenShift Cluster</h2>
-        <p className="aap-step__description">
-          Provide your OpenShift cluster API URL and authentication token.
-          You can get the token from the <code>oc login</code> command or the OpenShift web console
-          (User menu → Copy login command).
-        </p>
+        <h2 className="aap-step__title">Connect to OpenShift</h2>
       </div>
 
       <div className="aap-card aap-mb-lg">
@@ -128,7 +134,7 @@ export function ClusterStep({ config, updateConfig }: Props) {
             onChange={(e) => updateOCP({ api_url: e.target.value })}
           />
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            The Kubernetes API endpoint for your OpenShift cluster. Usually <code>https://api.&lt;cluster&gt;:6443</code>.
+            Usually <code>https://api.&lt;cluster&gt;:6443</code>
           </p>
         </div>
 
@@ -145,7 +151,7 @@ export function ClusterStep({ config, updateConfig }: Props) {
             onChange={(e) => updateOCP({ token: e.target.value })}
           />
           <p className="aap-text-muted aap-text-sm aap-mt-sm">
-            A token with <code>cluster-admin</code> privileges. Run <code>oc whoami -t</code> to get your current token.
+            Requires <code>cluster-admin</code>. Get via <code>oc whoami -t</code> or OpenShift console → Copy login command.
           </p>
         </div>
 

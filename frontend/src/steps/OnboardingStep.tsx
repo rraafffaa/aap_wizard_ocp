@@ -27,7 +27,7 @@ const TASKS: OnboardingTask[] = [
     key: 'manifest_uploaded',
     title: 'Upload Subscription Manifest',
     description:
-      'Download your subscription manifest from access.redhat.com and upload it to the AAP Gateway to activate your entitlements.',
+      'Activate your subscription by uploading a manifest from access.redhat.com.',
     doItForMeLabel: 'Upload Manifest',
     apiEndpoint: '/api/onboard/manifest',
     helpUrl: 'https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/getting_started',
@@ -36,7 +36,7 @@ const TASKS: OnboardingTask[] = [
     key: 'project_created',
     title: 'Create Your First Project',
     description:
-      'Connect a Git repository containing your Ansible playbooks, roles, or collections to the Automation Controller.',
+      'Link a Git repo with your playbooks to the Controller.',
     doItForMeLabel: 'Create Sample Project',
     apiEndpoint: '/api/onboard/project',
     helpUrl: 'https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_controller',
@@ -45,7 +45,7 @@ const TASKS: OnboardingTask[] = [
     key: 'inventory_created',
     title: 'Add Managed Hosts',
     description:
-      'Create an inventory with the hosts you want to automate. Add machine credentials for SSH access.',
+      'Create an inventory and add machine credentials.',
     doItForMeLabel: 'Create Demo Inventory',
     apiEndpoint: '/api/onboard/inventory',
     helpUrl: 'https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_controller',
@@ -54,7 +54,7 @@ const TASKS: OnboardingTask[] = [
     key: 'template_created',
     title: 'Create a Job Template',
     description:
-      'Combine your project, inventory, and credentials into a reusable job template that can be launched on demand or on a schedule.',
+      'Combine project, inventory, and credentials into a reusable template.',
     doItForMeLabel: 'Create Demo Template',
     apiEndpoint: '/api/onboard/template',
     helpUrl: 'https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_controller',
@@ -63,7 +63,7 @@ const TASKS: OnboardingTask[] = [
     key: 'job_launched',
     title: 'Run Your First Job',
     description:
-      'Launch your job template and watch the automation run in real time. Review the output to verify everything works.',
+      'Launch your template and verify the output.',
     doItForMeLabel: 'Launch Demo Job',
     apiEndpoint: '/api/onboard/launch',
     helpUrl: 'https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_controller',
@@ -113,10 +113,9 @@ export function OnboardingStep({ config, updateConfig }: Props) {
   return (
     <div className="aap-step">
       <div className="aap-step__header">
-        <h2 className="aap-step__title">Get Started with AAP</h2>
+        <h2 className="aap-step__title">Get Started</h2>
         <p className="aap-step__description">
-          Follow these steps to set up your first automation workflow. You can do each step manually
-          in the AAP UI or let the wizard do it for you.
+          Set up your first automation workflow — manually or with the wizard.
         </p>
       </div>
 
@@ -245,8 +244,7 @@ export function OnboardingStep({ config, updateConfig }: Props) {
           <CheckCircleIcon style={{ fontSize: 48, color: 'var(--pf-v6-global--success-color--100)' }} />
           <h3 className="aap-card__title aap-mt-md">You're All Set!</h3>
           <p className="aap-text-muted aap-mt-sm">
-            Your AAP deployment is configured and your first automation workflow is ready.
-            Explore the platform to discover more capabilities.
+            Your deployment is ready. Explore the platform for more capabilities.
           </p>
           <a
             href={gatewayUrl}

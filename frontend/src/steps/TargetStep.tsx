@@ -97,18 +97,12 @@ export function TargetStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">SSH Target</h2>
-        <p className="aap-step__description">
-          Configure the remote RHEL host where AAP will be installed.
-        </p>
       </div>
 
       <div className="aap-card aap-mb-lg">
         <div className="aap-card__header">
           <div>
             <div className="aap-card__title">Connection Details</div>
-            <p className="aap-card__description aap-mt-sm">
-              Provide SSH connection details, then verify before proceeding.
-            </p>
           </div>
           <div className="aap-selection-card__icon" aria-hidden="true">
             <ServerIcon />
@@ -124,7 +118,7 @@ export function TargetStep({ config, updateConfig }: Props) {
               mono
             />
           </FormField>
-          <FormField label="SSH Port" required>
+          <FormField label="SSH Port" required helperText="Valid range: 1–65535">
             <NumberInput
               value={config.target_ssh_port}
               onChange={(v) => { updateConfig({ target_ssh_port: v }); setResult(null); }}
@@ -157,9 +151,6 @@ export function TargetStep({ config, updateConfig }: Props) {
         <div className="aap-card__header">
           <div>
             <div className="aap-card__title">Verify Connection</div>
-            <p className="aap-card__description aap-mt-sm">
-              Test SSH connectivity to the target host.
-            </p>
           </div>
           <button
             type="button"
@@ -227,7 +218,7 @@ export function TargetStep({ config, updateConfig }: Props) {
 
         {!result && !error && !verifying && (
           <p className="aap-text-sm aap-text-muted aap-mt-md">
-            Fill in the fields above and click <strong>Verify Connection</strong> to test SSH access.
+            Enter credentials above, then verify.
           </p>
         )}
       </div>

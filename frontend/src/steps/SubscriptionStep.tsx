@@ -58,8 +58,7 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
             <div className="aap-selection-card__icon"><UIIcon name="package" size={24} /></div>
             <div className="aap-selection-card__title">Disconnected (Bundled)</div>
             <div className="aap-selection-card__description">
-              Use a pre-packaged bundle containing all container images.
-              For air-gapped environments with no internet access.
+              Bundled images for air-gapped environments.
             </div>
           </div>
         </div>
@@ -69,8 +68,7 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
         <div className="aap-card aap-mt-lg">
           <h3 className="aap-card__title">Registry Credentials</h3>
           <p className="aap-card__description aap-mb-md">
-            Enter your <code>registry.redhat.io</code> credentials.
-            These are required to pull AAP container images during installation.
+            Required to pull container images from <code>registry.redhat.io</code>.
           </p>
           <div className="aap-form-row">
             <FormField label="Registry Username" required>

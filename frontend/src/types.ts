@@ -43,6 +43,7 @@ export interface OCPConfig {
   operator_channel: string;
   operator_installed: boolean;
   cr_overrides: string;
+  access_url: string;
 }
 
 export function getDefaultOCPConfig(): OCPConfig {
@@ -64,6 +65,7 @@ export function getDefaultOCPConfig(): OCPConfig {
     operator_channel: 'stable-2.6',
     operator_installed: false,
     cr_overrides: '',
+    access_url: '',
   };
 }
 
@@ -455,6 +457,7 @@ export interface DeployStatus {
   current_phase: string;
   progress: number;
   error: string;
+  access_url?: string;
   log_lines: string[];
 }
 
@@ -489,7 +492,7 @@ const CONTAINERIZED_SECTIONS: { label: string; steps: WizardStep[] }[] = [
   { label: 'Getting Started', steps: ['welcome', 'eula', 'platform'] },
   { label: 'Installation', steps: ['subscription', 'topology', 'target', 'hosts'] },
   { label: 'Configuration', steps: ['components', 'database', 'network', 'credentials', 'advanced'] },
-  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete', 'onboarding'] },
+  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete'] },
 ];
 
 // Steps for OpenShift deployment
@@ -497,7 +500,7 @@ const OPENSHIFT_SECTIONS: { label: string; steps: WizardStep[] }[] = [
   { label: 'Getting Started', steps: ['welcome', 'eula', 'platform'] },
   { label: 'OpenShift', steps: ['cluster', 'namespace', 'operator', 'replicas'] },
   { label: 'Configuration', steps: ['components', 'database', 'network', 'credentials', 'advanced'] },
-  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete', 'onboarding'] },
+  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete'] },
 ];
 
 export function getStepSections(platform: DeployPlatform): { label: string; steps: WizardStep[] }[] {
@@ -833,9 +836,12 @@ export function saveDeploymentRecord(
   config: DeploymentConfig,
   status: 'completed' | 'failed',
 ) {
+  const isOCP = config.platform === 'openshift';
   const host = config.target_host || config.gateway.hosts[0];
   const port = config.network.https_port;
-  const gatewayUrl = `https://${host}${port === 443 ? '' : `:${port}`}`;
+  const gatewayUrl = isOCP
+    ? config.ocp.access_url || `https://aap-${config.ocp.namespace || 'aap'}.apps.${config.ocp.api_url.replace(/^https?:\/\/api\./, '').replace(/:6443\/?$/, '')}`
+    : `https://${host}${port === 443 ? '' : `:${port}`}`;
 
   const record: DeploymentRecord = {
     id: sessionId,

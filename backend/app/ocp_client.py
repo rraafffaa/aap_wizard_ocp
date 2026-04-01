@@ -38,7 +38,7 @@ class OCPClient:
             self._client = httpx.AsyncClient(
                 headers={"Authorization": f"Bearer {self.token}"},
                 verify=False,  # NOTE: Disabling SSL verification for self-signed cluster certs
-                timeout=30.0,
+                timeout=60.0,
             )
         return self._client
 

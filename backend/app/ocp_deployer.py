@@ -57,6 +57,7 @@ class OCPDeployer:
         self._current_phase = ""
         self._status = "pending"
         self._error = ""
+        self._access_url = ""
         self._log_lines: list[str] = []
         self._cancelled = asyncio.Event()
         self._log_callback: Optional[Callable[[str], None]] = None
@@ -144,7 +145,8 @@ class OCPDeployer:
                 await self._log("[OK] AAP operator already installed — skipping installation")
                 await self._update_progress("operator_wait")
 
-            # Phase 6: Apply AnsibleAutomationPlatform CR
+            # Phase 6a: Create required Secrets, then apply CR
+            await self._create_secrets()
             await self._apply_cr()
             await self._update_progress("cr_apply")
             self._check_cancellation()
@@ -195,6 +197,7 @@ class OCPDeployer:
 
             self._status = "success"
             self._progress = 100
+            self._access_url = access_url
             return {
                 "status": "success",
                 "namespace": self.namespace,
@@ -365,7 +368,7 @@ class OCPDeployer:
         except Exception as exc:
             raise RuntimeError(f"Failed to create Subscription: {exc}")
 
-    async def _wait_for_operator(self, timeout: int = 300):
+    async def _wait_for_operator(self, timeout: int = 600):
         """
         Wait for the operator CSV to be ready.
 
@@ -413,6 +416,29 @@ class OCPDeployer:
                 f"[INFO] Operator not ready yet... ({int(remaining)}s remaining)"
             )
             await asyncio.sleep(check_interval)
+
+    async def _create_secrets(self):
+        """Create required Kubernetes Secrets before applying the CR."""
+        from app.cr_generator import generate_admin_secret, generate_postgres_secret
+
+        await self._log("[INFO] Creating required Secrets...")
+
+        # Admin password secret
+        admin_secret = generate_admin_secret(self.config.get("wizard_config", self.config))
+        try:
+            await self.client.apply_resource(self.namespace, admin_secret)
+            await self._log("[OK] Admin password Secret created")
+        except Exception as exc:
+            raise RuntimeError(f"Failed to create admin password Secret: {exc}")
+
+        # External DB secret (if applicable)
+        postgres_secret = generate_postgres_secret(self.config.get("wizard_config", self.config))
+        if postgres_secret:
+            try:
+                await self.client.apply_resource(self.namespace, postgres_secret)
+                await self._log("[OK] PostgreSQL configuration Secret created")
+            except Exception as exc:
+                raise RuntimeError(f"Failed to create PostgreSQL Secret: {exc}")
 
     async def _apply_cr(self):
         """Apply the AnsibleAutomationPlatform custom resource."""
@@ -478,13 +504,17 @@ class OCPDeployer:
                 status = resource.get("status", {})
                 conditions = status.get("conditions", [])
 
+                # Always extract conditions (not just on status change)
+                ready_condition = next(
+                    (c for c in conditions if c.get("type") == "Ready"), None
+                )
+                running_condition = next(
+                    (c for c in conditions if c.get("type") == "Running"), None
+                )
+
                 # Log status changes
                 current_status = str(status)
                 if current_status != last_status:
-                    # Look for meaningful status indicators
-                    ready_condition = next(
-                        (c for c in conditions if c.get("type") == "Ready"), None
-                    )
                     if ready_condition:
                         ready_status = ready_condition.get("status", "Unknown")
                         reason = ready_condition.get("reason", "")
@@ -495,11 +525,11 @@ class OCPDeployer:
                         if message and message != reason:
                             await self._log(f"[INFO] {message}")
 
-                    # Check for other conditions
+                    # Log other conditions
                     for condition in conditions:
                         cond_type = condition.get("type", "")
                         cond_status = condition.get("status", "")
-                        if cond_type != "Ready" and cond_status != "Unknown":
+                        if cond_type not in ("Ready",) and cond_status != "Unknown":
                             await self._log(
                                 f"[INFO] {cond_type}: {cond_status}"
                             )
@@ -520,21 +550,44 @@ class OCPDeployer:
                     active_pods = len(running_pods) + len(completed_pods)
                     if pods:
                         await self._log(
-                            f"[INFO] Pods: {len(running_pods)}/{len(pods)} running"
+                            f"[INFO] Pods: {active_pods}/{len(pods)} active ({len(running_pods)} running, {len(completed_pods)} completed)"
                         )
-                    # All pods are either Running or Completed (e.g., migration jobs)
-                    if pods and active_pods >= len(pods):
+
+                    # Filter out operator manager pods — they match component names
+                    # but are NOT the actual AAP application pods
+                    app_pods = [
+                        p.get("name", "") for p in running_pods
+                        if "operator-controller-manager" not in p.get("name", "")
+                        and "operator-manager" not in p.get("name", "")
+                    ]
+
+                    # AAP app pods follow the pattern: aap-gateway-*, aap-controller-*,
+                    # aap-hub-*, aap-eda-*. Must have all 4 components.
+                    aap_component_patterns = [
+                        "aap-gateway-",      # not aap-gateway-operator-
+                        "aap-controller-",   # the actual controller workload
+                        "aap-hub-",          # hub api/content/worker/web
+                        "aap-eda-",          # eda api/worker/scheduler
+                    ]
+                    components_present = sum(
+                        1 for pattern in aap_component_patterns
+                        if any(name.startswith(pattern) for name in app_pods)
+                    )
+
+                    # Need all 4 AAP components AND a minimum of 15 total pods
+                    # (9 operator/infra + at least 6 app pods)
+                    min_total_pods = 15
+                    if (pods and active_pods >= len(pods)
+                            and components_present >= 4
+                            and len(pods) >= min_total_pods):
                         pods_ready = True
                 except Exception:
                     pass
 
                 # AAP 2.6 operator may only have a "Running" condition (no "Ready")
-                # If all pods are up and the CR has a Running condition, consider it done
-                running_condition = next(
-                    (c for c in conditions if c.get("type") == "Running"), None
-                )
+                # If all key component pods are up and the CR has a Running condition, consider it done
                 if pods_ready and running_condition and running_condition.get("status") == "True":
-                    await self._log("[OK] All AAP pods are running — deployment complete")
+                    await self._log("[OK] All AAP component pods are running — deployment complete")
                     return
 
             except Exception as exc:
@@ -549,58 +602,67 @@ class OCPDeployer:
     async def _get_routes(self) -> list[dict]:
         """
         Retrieve OpenShift routes for the deployed AAP.
+        Retries a few times since routes may take a moment to appear after pods are ready.
 
         Returns:
             List of route dictionaries with name, host, path, service, tls
         """
         await self._log("[INFO] Retrieving access routes...")
 
-        try:
-            routes = await self.client.get_routes(self.namespace)
+        # Routes may not appear immediately — retry up to 3 times
+        routes = []
+        for attempt in range(3):
+            try:
+                routes = await self.client.get_routes(self.namespace)
+                if routes:
+                    break
+                if attempt < 2:
+                    await self._log("[INFO] No routes yet — waiting 10s...")
+                    await asyncio.sleep(10)
+            except Exception as exc:
+                await self._log(f"[WARN] Could not retrieve routes: {exc}")
+                if attempt < 2:
+                    await asyncio.sleep(10)
 
-            if routes:
-                await self._log(f"[OK] Found {len(routes)} route(s):")
-                for route in routes:
-                    protocol = "https" if route.get("tls") else "http"
-                    host = route.get("host", "")
-                    name = route.get("name", "unknown")
-                    await self._log(f"  - {name}: {protocol}://{host}")
-            else:
-                await self._log("[WARN] No routes found")
+        if routes:
+            await self._log(f"[OK] Found {len(routes)} route(s):")
+            for route in routes:
+                protocol = "https" if route.get("tls") else "http"
+                host = route.get("host", "")
+                name = route.get("name", "unknown")
+                await self._log(f"  - {name}: {protocol}://{host}")
+        else:
+            await self._log("[WARN] No routes found after retries")
 
-            return routes
-
-        except Exception as exc:
-            await self._log(f"[WARN] Could not retrieve routes: {exc}")
-            return []
+        return routes
 
     async def _validate(self):
         """Perform basic deployment validation."""
         await self._log("[INFO] Running deployment validation...")
 
         try:
-            # Check pods
+            # Check pods — Running and Succeeded (completed Jobs like migrations) are both healthy
             pods = await self.client.list_pods(self.namespace)
             running_pods = [p for p in pods if p.get("phase") == "Running"]
+            completed_pods = [p for p in pods if p.get("phase") == "Succeeded"]
+            healthy_count = len(running_pods) + len(completed_pods)
             total_pods = len(pods)
-            running_count = len(running_pods)
+            unhealthy = [p for p in pods if p.get("phase") not in ("Running", "Succeeded")]
 
-            await self._log(f"[INFO] Pods: {running_count}/{total_pods} running")
+            await self._log(f"[INFO] Pods: {len(running_pods)} running, {len(completed_pods)} completed, {total_pods} total")
 
             if total_pods == 0:
                 await self._log("[WARN] No pods found in namespace")
-            elif running_count < total_pods:
+            elif unhealthy:
                 await self._log(
-                    f"[WARN] Only {running_count}/{total_pods} pods are running"
+                    f"[WARN] {len(unhealthy)} pod(s) not healthy"
                 )
-                # Log non-running pods
-                for pod in pods:
-                    if pod.get("phase") != "Running":
-                        await self._log(
-                            f"  - {pod.get('name')}: {pod.get('phase')}"
-                        )
+                for pod in unhealthy:
+                    await self._log(
+                        f"  - {pod.get('name')}: {pod.get('phase')}"
+                    )
             else:
-                await self._log("[OK] All pods are running")
+                await self._log("[OK] All pods are healthy")
 
             # Check routes
             routes = await self.client.get_routes(self.namespace)

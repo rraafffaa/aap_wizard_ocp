@@ -20,17 +20,16 @@ export function PlatformStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">Choose Your Platform</h2>
         <p className="aap-step__description">
-          AAP 2.6 can be deployed on a RHEL VM using containers (Podman) or on an OpenShift cluster using the AAP Operator.
-          Choose the platform that matches your infrastructure.
+          Select the deployment method that matches your infrastructure.
         </p>
       </div>
 
       <div className="aap-card aap-mb-lg">
         <div className="aap-card__header">
           <div>
-            <div className="aap-card__title">Which platform is right for me?</div>
+            <div className="aap-card__title">Not sure?</div>
             <p className="aap-card__description aap-mt-sm">
-              Compare both deployment methods to find the best fit for your environment.
+              Compare deployment methods side by side.
             </p>
           </div>
           <button
@@ -98,16 +97,13 @@ export function PlatformStep({ config, updateConfig }: Props) {
           </div>
           <div className="aap-selection-card__title">Containerized (RHEL)</div>
           <div className="aap-selection-card__description">
-            Deploy AAP on RHEL 9 using Podman containers. The wizard connects via SSH, generates an inventory file,
-            and runs the Ansible installer automatically.
+            Deploy on RHEL 9 with Podman via SSH.
           </div>
           <ul className="aap-selection-card__features">
-            <li><CheckIcon aria-hidden="true" /> SSH-based deployment to RHEL VMs</li>
-            <li><CheckIcon aria-hidden="true" /> Growth (all-in-one) or Enterprise topology</li>
-            <li><CheckIcon aria-hidden="true" /> Works in air-gapped environments</li>
-            <li><CheckIcon aria-hidden="true" /> Full control over host configuration</li>
+            <li><CheckIcon aria-hidden="true" /> Growth or Enterprise topology</li>
+            <li><CheckIcon aria-hidden="true" /> Air-gapped support</li>
+            <li><CheckIcon aria-hidden="true" /> Full host control</li>
             <li><CheckIcon aria-hidden="true" /> Managed or external PostgreSQL</li>
-            <li><CheckIcon aria-hidden="true" /> Bundled installer tarball included</li>
           </ul>
         </div>
 
@@ -127,88 +123,14 @@ export function PlatformStep({ config, updateConfig }: Props) {
           </div>
           <div className="aap-selection-card__title">Operator (OpenShift)</div>
           <div className="aap-selection-card__description">
-            Deploy AAP on OpenShift using the AAP Operator from OperatorHub. The wizard connects to your cluster,
-            installs the operator, and applies a Custom Resource.
+            Deploy on OpenShift via the AAP Operator.
           </div>
           <ul className="aap-selection-card__features">
-            <li><CheckIcon aria-hidden="true" /> Kubernetes-native deployment</li>
-            <li><CheckIcon aria-hidden="true" /> Operator-managed lifecycle & upgrades</li>
-            <li><CheckIcon aria-hidden="true" /> Auto-scaling with replica controls</li>
-            <li><CheckIcon aria-hidden="true" /> OpenShift Routes with auto-TLS</li>
-            <li><CheckIcon aria-hidden="true" /> PVC-based persistent storage</li>
+            <li><CheckIcon aria-hidden="true" /> Operator-managed lifecycle</li>
+            <li><CheckIcon aria-hidden="true" /> Auto-scaling replicas</li>
+            <li><CheckIcon aria-hidden="true" /> Auto-TLS via Routes</li>
             <li><CheckIcon aria-hidden="true" /> GitOps-friendly CR export</li>
           </ul>
-        </div>
-      </div>
-
-      <div className="aap-card aap-mt-lg">
-        <div className="aap-card__header">
-          <div className="aap-card__title">What Happens Next</div>
-        </div>
-        <div className="aap-deploy-phases" role="list">
-          {config.platform === 'containerized' ? (
-            <>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">1</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Choose Installation Type</div>
-                  <div className="aap-text-muted aap-text-sm">Select online or disconnected installation and set the install directory.</div>
-                </div>
-              </div>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">2</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Configure SSH Target</div>
-                  <div className="aap-text-muted aap-text-sm">Provide your RHEL host details and verify the SSH connection.</div>
-                </div>
-              </div>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">3</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Set Up Components</div>
-                  <div className="aap-text-muted aap-text-sm">Configure Gateway, Controller, Hub, EDA, database, networking, and credentials.</div>
-                </div>
-              </div>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">4</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Deploy & Get Started</div>
-                  <div className="aap-text-muted aap-text-sm">Run pre-flight checks, review your config, and launch the installer.</div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">1</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Connect to OpenShift</div>
-                  <div className="aap-text-muted aap-text-sm">Provide your cluster API URL and token, then verify the connection.</div>
-                </div>
-              </div>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">2</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Install AAP Operator</div>
-                  <div className="aap-text-muted aap-text-sm">Configure namespace, storage, and install the operator from OperatorHub.</div>
-                </div>
-              </div>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">3</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Configure Components</div>
-                  <div className="aap-text-muted aap-text-sm">Set replica counts, credentials, database, routes, and advanced settings.</div>
-                </div>
-              </div>
-              <div className="aap-phase" role="listitem">
-                <div className="aap-phase__indicator aap-nav-indicator" aria-hidden="true">4</div>
-                <div>
-                  <div className="aap-card__title aap-mb-md">Deploy & Get Started</div>
-                  <div className="aap-text-muted aap-text-sm">Apply the Custom Resource and watch the operator reconcile your deployment.</div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </div>
 
