@@ -369,13 +369,13 @@ a:hover {
 
 /* Step entry animation */
 .aap-step-enter {
-  animation: stepFadeIn 300ms ease forwards;
+  animation: stepSlideIn 300ms ease-out forwards;
 }
 
-@keyframes stepFadeIn {
+@keyframes stepSlideIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateX(24px);
   }
   to {
     opacity: 1;
@@ -425,9 +425,13 @@ a:hover {
   border-radius: var(--aap-radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--aap-transition-fast);
+  transition: all 200ms ease;
   white-space: nowrap;
   user-select: none;
+}
+
+.aap-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .aap-btn:disabled {
@@ -451,6 +455,7 @@ a:hover {
 .aap-btn--primary:hover:not(:disabled) {
   background: var(--aap-blue-hover);
   border-color: var(--aap-blue-hover);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
 .aap-btn--primary:active:not(:disabled) {
@@ -516,6 +521,13 @@ a:hover {
   padding: 0 var(--aap-space-sm);
 }
 
+/* Large variant */
+.aap-btn--lg {
+  font-size: var(--aap-font-lg);
+  height: 44px;
+  padding: 0 var(--aap-space-lg);
+}
+
 /* ==========================================================================
    Cards
    ========================================================================== */
@@ -524,7 +536,8 @@ a:hover {
   border: 1px solid var(--aap-border-subtle);
   border-radius: var(--aap-radius-lg);
   padding: var(--aap-space-lg);
-  transition: border-color var(--aap-transition-fast);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.04);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .aap-card + .aap-card {
@@ -846,18 +859,21 @@ a:hover {
   border-radius: var(--aap-radius-lg);
   padding: var(--aap-space-lg);
   cursor: pointer;
-  transition: all var(--aap-transition-default);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
   text-align: left;
 }
 
 .aap-selection-card:hover {
   border-color: var(--aap-border-strong);
   background: var(--aap-surface-card-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .aap-selection-card--selected {
   border-color: var(--aap-blue);
   background: var(--aap-blue-subtle);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
 }
 
 .aap-selection-card--selected:hover {
@@ -1111,125 +1127,113 @@ a:hover {
 /* ==========================================================================
    Welcome / Hero
    ========================================================================== */
+/* ---------- Welcome Page ---------- */
 .aap-welcome {
   text-align: center;
-  padding: var(--aap-space-2xl) 0;
-  max-width: 680px;
+  padding: var(--aap-space-3xl) 0 var(--aap-space-2xl);
+  max-width: 720px;
   margin: 0 auto;
 }
 
 .aap-welcome__logo {
-  margin-bottom: var(--aap-space-lg);
+  margin-bottom: var(--aap-space-md);
+  animation: fadeInUp 500ms ease-out;
 }
 
-.aap-welcome__heading {
-  font-family: var(--aap-font-family);
-  font-size: var(--aap-font-3xl);
-  font-weight: 400;
-  color: var(--aap-text-primary);
-  letter-spacing: -0.02em;
-}
-
-.aap-welcome__heading strong {
-  font-weight: 600;
+.aap-welcome__logo-img {
+  height: 72px;
+  width: auto;
 }
 
 .aap-welcome__subheading {
-  font-size: var(--aap-font-lg);
+  font-family: var(--aap-font-family);
+  font-size: var(--aap-font-xl);
+  font-weight: 500;
+  color: var(--aap-text-primary);
+  letter-spacing: -0.01em;
+  animation: fadeInUp 500ms ease-out 100ms both;
+}
+
+.aap-welcome__tagline {
+  font-size: var(--aap-font-base);
   color: var(--aap-text-muted);
   margin-top: var(--aap-space-sm);
-  font-weight: 400;
   line-height: 1.5;
+  animation: fadeInUp 500ms ease-out 150ms both;
+}
+
+.aap-welcome__cards {
+  margin-top: var(--aap-space-xl);
+  animation: fadeInUp 500ms ease-out 250ms both;
+}
+
+.aap-welcome__cards fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.aap-selection-card--platform {
+  cursor: pointer;
+  text-align: left;
+  min-height: 140px;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.aap-selection-card--platform:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.aap-selection-card__subtitle {
+  font-size: var(--aap-font-sm);
+  color: var(--aap-text-muted);
+  margin-top: 2px;
+}
+
+.aap-selection-card__requirements {
+  list-style: none;
+  padding: 0;
+  margin: var(--aap-space-md) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--aap-space-xs);
+  animation: fadeInUp 200ms ease-out;
+}
+
+.aap-selection-card__requirements li {
+  display: flex;
+  align-items: center;
+  gap: var(--aap-space-sm);
+  font-size: var(--aap-font-sm);
+  color: var(--aap-text-secondary);
+}
+
+.aap-selection-card__requirements li svg {
+  width: 14px;
+  height: 14px;
+  color: var(--aap-success);
+  flex-shrink: 0;
 }
 
 .aap-welcome__cta {
   margin-top: var(--aap-space-xl);
+  animation: fadeInUp 500ms ease-out 350ms both;
 }
 
-.aap-welcome__features {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--aap-space-md);
-  margin-top: var(--aap-space-2xl);
-  text-align: left;
-}
-
-.aap-feature-card {
-  padding: var(--aap-space-lg);
-  background: var(--aap-surface-card);
-  border: 1px solid var(--aap-border-subtle);
-  border-radius: var(--aap-radius-lg);
-  transition: border-color var(--aap-transition-default);
-}
-
-.aap-feature-card:hover {
-  border-color: var(--aap-border-default);
-}
-
-.aap-feature-card__icon {
-  display: flex;
+.aap-welcome__past-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--aap-radius-md);
-  margin-bottom: var(--aap-space-sm);
-  color: var(--aap-blue);
-  background: var(--aap-blue-subtle);
-}
-
-.aap-feature-card__icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.aap-feature-card__title {
-  font-family: var(--aap-font-family);
-  font-size: var(--aap-font-base);
-  font-weight: 500;
-  color: var(--aap-text-primary);
-  margin-bottom: var(--aap-space-xs);
-}
-
-.aap-feature-card__text {
+  gap: var(--aap-space-xs);
+  margin-top: var(--aap-space-md);
+  color: var(--aap-text-muted);
   font-size: var(--aap-font-sm);
-  color: var(--aap-text-muted);
-  line-height: 1.5;
 }
 
-.aap-welcome__requirements {
-  margin-top: var(--aap-space-2xl);
-  text-align: left;
-}
-
-.aap-requirements__title {
-  font-size: var(--aap-font-sm);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--aap-text-muted);
-  margin-bottom: var(--aap-space-md);
-}
-
-.aap-requirements__list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--aap-space-sm);
-}
-
-.aap-requirements__item {
-  display: flex;
-  align-items: center;
-  gap: var(--aap-space-sm);
-  font-size: var(--aap-font-md);
-  color: var(--aap-text-secondary);
-}
-
-.aap-requirements__item svg {
-  width: 14px;
-  height: 14px;
-  color: var(--aap-text-muted);
-  flex-shrink: 0;
+/* ---------- Hero Fade-In Animation ---------- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ==========================================================================
@@ -2625,5 +2629,71 @@ a:hover {
   .aap-modal {
     max-width: 95%;
     padding: var(--aap-space-lg);
+  }
+}
+
+/* ==========================================================================
+   Enterprise Animations & Micro-interactions
+   ========================================================================== */
+
+/* Deploy progress shimmer */
+.aap-progress__bar--shimmer {
+  background: linear-gradient(90deg, var(--aap-blue) 25%, #4da6ff 50%, var(--aap-blue) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+/* Success checkmark draw */
+.aap-check-draw path {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: drawCheck 400ms ease-out forwards 200ms;
+}
+
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Focus rings (global) */
+*:focus-visible {
+  outline: 2px solid var(--aap-blue);
+  outline-offset: 2px;
+}
+
+.aap-btn:focus-visible {
+  outline: 2px solid var(--aap-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.15);
+}
+
+/* Toast animation override for smoother entry */
+.aap-toast {
+  animation: toastSlideIn 300ms ease-out;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .aap-step-enter,
+  .aap-welcome__logo,
+  .aap-welcome__subheading,
+  .aap-welcome__tagline,
+  .aap-welcome__cards,
+  .aap-welcome__cta,
+  .aap-selection-card__requirements,
+  .aap-toast,
+  .aap-check-draw path,
+  .aap-progress__bar--shimmer {
+    animation: none !important;
+  }
+
+  .aap-selection-card,
+  .aap-selection-card--platform,
+  .aap-btn,
+  .aap-card {
+    transition: none !important;
   }
 }

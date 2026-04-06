@@ -4,7 +4,9 @@ import {
   AngleRightIcon,
   ExternalLinkAltIcon,
   InfoCircleIcon,
+  CheckIcon,
 } from '@patternfly/react-icons';
+import { SwitchInput } from '../components/FormField';
 import type {
   DeploymentConfig,
   AdvancedVariablesConfig,
@@ -457,6 +459,121 @@ export function AdvancedVariablesStep({ config, updateConfig }: Props) {
         <p className="aap-step__description">
           Optional overrides — only modified values are included in the {isOCP ? 'custom resource' : 'inventory file'}.
         </p>
+      </div>
+
+      {/* Component Options — moved from ComponentsStep */}
+      <div className="aap-card aap-mb-md">
+        <div className="aap-card__header">
+          <h3 className="aap-card__title">Component Options</h3>
+        </div>
+
+        {/* Hub seed collections */}
+        <div className="aap-step__section">
+          <SwitchInput
+            checked={config.hub.seed_collections}
+            onChange={(v) => updateConfig({ hub: { ...config.hub, seed_collections: v } })}
+            label="Pre-install certified content collections (Hub)"
+          />
+          <p className="aap-text-muted aap-text-sm aap-mt-sm">
+            Requires 32 GB RAM and can take 45+ minutes.
+          </p>
+        </div>
+
+        {/* Controller memory capacity */}
+        <div className="aap-step__section">
+          <div className="aap-form-group">
+            <label className="aap-form-group__label">Controller memory capacity allocation</label>
+            <div className="aap-form-row">
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.1"
+                value={config.controller.percent_memory_capacity}
+                onChange={(e) =>
+                  updateConfig({
+                    controller: {
+                      ...config.controller,
+                      percent_memory_capacity: parseFloat(e.target.value),
+                    },
+                  })
+                }
+                className="aap-input"
+                aria-label="Memory capacity percentage"
+              />
+              <span className="aap-text-mono">
+                {Math.round(config.controller.percent_memory_capacity * 100)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* EDA safe plugins */}
+        <div className="aap-step__section">
+          <div className="aap-form-group">
+            <label className="aap-form-group__label">EDA event source plugins</label>
+            <div className="aap-form-row aap-mt-sm" style={{ flexWrap: 'wrap' }}>
+              {[
+                'ansible.eda.webhook',
+                'ansible.eda.alertmanager',
+                'ansible.eda.url_check',
+                'ansible.eda.range',
+                'ansible.eda.file_watch',
+                'ansible.eda.journald',
+              ].map((plugin) => {
+                const active = config.eda.safe_plugins.includes(plugin);
+                return (
+                  <button
+                    key={plugin}
+                    type="button"
+                    className={`aap-btn aap-btn--sm ${active ? 'aap-btn--primary' : 'aap-btn--secondary'}`}
+                    onClick={() => {
+                      const plugins = active
+                        ? config.eda.safe_plugins.filter((p) => p !== plugin)
+                        : [...config.eda.safe_plugins, plugin];
+                      updateConfig({ eda: { ...config.eda, safe_plugins: plugins } });
+                    }}
+                  >
+                    {active && <CheckIcon />} {plugin.replace('ansible.eda.', '')}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Redis mode (enterprise containerized only) */}
+        {config.topology === 'enterprise' && !isOCP && (
+          <div className="aap-step__section">
+            <div className="aap-form-group">
+              <label className="aap-form-group__label">Redis mode</label>
+              <div className="aap-selection-grid aap-selection-grid--2col" role="radiogroup" aria-label="Redis mode">
+                {(['standalone', 'cluster'] as const).map((mode) => (
+                  <div
+                    key={mode}
+                    role="radio"
+                    aria-checked={config.redis_mode === mode}
+                    tabIndex={0}
+                    className={`aap-selection-card ${config.redis_mode === mode ? 'aap-selection-card--selected' : ''}`}
+                    onClick={() => updateConfig({ redis_mode: mode })}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        updateConfig({ redis_mode: mode });
+                      }
+                    }}
+                  >
+                    <div className="aap-selection-card__indicator" />
+                    <div className="aap-selection-card__title">{mode === 'standalone' ? 'Standalone' : 'Cluster'}</div>
+                    <div className="aap-selection-card__description">
+                      {mode === 'standalone' ? 'Single Redis instance per service node' : 'Distributed Redis cluster for high availability'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Common / Registry — containerized only (podman registry settings) */}

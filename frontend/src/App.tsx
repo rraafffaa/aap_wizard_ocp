@@ -18,21 +18,17 @@ import { SubscriptionStep } from './steps/SubscriptionStep';
 import { TopologyStep } from './steps/TopologyStep';
 import { TargetStep } from './steps/TargetStep';
 import { HostsStep } from './steps/HostsStep';
-import { ComponentsStep } from './steps/ComponentsStep';
 import { DatabaseStep } from './steps/DatabaseStep';
 import { NetworkStep } from './steps/NetworkStep';
 import { CredentialsStep } from './steps/CredentialsStep';
 import { AdvancedVariablesStep } from './steps/AdvancedVariablesStep';
 import { PreflightStep } from './steps/PreflightStep';
-import { ReviewStep } from './steps/ReviewStep';
 import { DeployStep } from './steps/DeployStep';
 import { CompleteStep } from './steps/CompleteStep';
-import { PlatformStep } from './steps/PlatformStep';
 import { ClusterStep } from './steps/ClusterStep';
 import { NamespaceStep } from './steps/NamespaceStep';
 import { OperatorStep } from './steps/OperatorStep';
 import { ReplicasStep } from './steps/ReplicasStep';
-import { OnboardingStep } from './steps/OnboardingStep';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProfileManager } from './components/ProfileManager';
 import { ConfirmModal } from './components/ConfirmModal';
@@ -183,15 +179,14 @@ function AuthenticatedWizard() {
   }, []);
 
   const isDeploying = currentStep === 'deploy';
-  const isTerminal = currentStep === 'complete' || currentStep === 'onboarding';
+  const isTerminal = currentStep === 'complete';
   const showFooter = currentStep !== 'welcome' && !isDeploying && !isTerminal;
 
   const renderStep = () => {
     const common = { config, updateConfig };
     switch (currentStep) {
-      case 'welcome': return <WelcomeStep onNext={goNext} onViewPastDeploy={viewPastDeployment} />;
+      case 'welcome': return <WelcomeStep {...common} onNext={goNext} onViewPastDeploy={viewPastDeployment} />;
       case 'eula': return <EulaStep {...common} />;
-      case 'platform': return <PlatformStep {...common} />;
       case 'subscription': return <SubscriptionStep {...common} />;
       case 'topology': return <TopologyStep {...common} />;
       case 'target': return <TargetStep {...common} />;
@@ -201,13 +196,11 @@ function AuthenticatedWizard() {
       case 'namespace': return <NamespaceStep {...common} />;
       case 'operator': return <OperatorStep {...common} />;
       case 'replicas': return <ReplicasStep {...common} />;
-      case 'components': return <ComponentsStep {...common} />;
       case 'database': return <DatabaseStep {...common} />;
       case 'network': return <NetworkStep {...common} />;
       case 'credentials': return <CredentialsStep {...common} />;
       case 'advanced': return <AdvancedVariablesStep {...common} />;
       case 'preflight': return <PreflightStep {...common} />;
-      case 'review': return <ReviewStep config={config} updateConfig={updateConfig} />;
       case 'deploy':
         return (
           <DeployStep
@@ -233,7 +226,6 @@ function AuthenticatedWizard() {
             }}
           />
         );
-      case 'onboarding': return <OnboardingStep {...common} />;
       default: return null;
     }
   };
@@ -377,7 +369,7 @@ function AuthenticatedWizard() {
               {currentIndex + 1} of {wizardSteps.length}
             </span>
             <button className="aap-btn aap-btn--primary" onClick={goNext}>
-              {currentStep === 'review' ? 'Start Deployment' : 'Next'}
+              {currentStep === 'preflight' ? 'Start Deployment' : 'Next'}
             </button>
           </div>
         </footer>

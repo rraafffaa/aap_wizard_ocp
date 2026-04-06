@@ -1,7 +1,8 @@
 import React from 'react';
-import { ExclamationTriangleIcon } from '@patternfly/react-icons';
+import { ExclamationTriangleIcon, KeyIcon } from '@patternfly/react-icons';
 import type { DeploymentConfig, DatabaseType } from '../types';
 import { FormField, TextInput, NumberInput } from '../components/FormField';
+import { generatePassword } from './CredentialsStep';
 
 interface Props {
   config: DeploymentConfig;
@@ -112,12 +113,23 @@ export function DatabaseStep({ config, updateConfig }: Props) {
             />
           </FormField>
           <FormField label="Admin Password" required>
-            <TextInput
-              value={config.database.admin_password}
-              onChange={(v) => updateConfig({ database: { ...config.database, admin_password: v } })}
-              placeholder="Strong password"
-              type="password"
-            />
+            <div className="aap-form-row">
+              <TextInput
+                value={config.database.admin_password}
+                onChange={(v) => updateConfig({ database: { ...config.database, admin_password: v } })}
+                placeholder="Strong password"
+                type="password"
+              />
+              <button
+                type="button"
+                className="aap-btn aap-btn--tertiary aap-btn--sm"
+                onClick={() => updateConfig({ database: { ...config.database, admin_password: generatePassword() } })}
+                title="Generate random password"
+                aria-label="Generate random admin password"
+              >
+                <KeyIcon aria-hidden />
+              </button>
+            </div>
           </FormField>
         </div>
       </div>
@@ -154,10 +166,27 @@ export function DatabaseStep({ config, updateConfig }: Props) {
       {/* Per-component database settings */}
       <div className="aap-card aap-mb-lg">
         <div className="aap-card__header">
-          <h3 className="aap-card__title">Component Database Credentials</h3>
-          <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-            Per-component database names and passwords.
-          </p>
+          <div>
+            <h3 className="aap-card__title">Component Database Credentials</h3>
+            <p className="aap-card__description aap-text-muted aap-text-sm">
+              Per-component database names and passwords.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="aap-btn aap-btn--secondary aap-btn--sm"
+            onClick={() => {
+              updateConfig({
+                gateway: { ...config.gateway, pg_password: generatePassword() },
+                controller: { ...config.controller, pg_password: generatePassword() },
+                hub: { ...config.hub, pg_password: generatePassword() },
+                eda: { ...config.eda, pg_password: generatePassword() },
+              });
+            }}
+            aria-label="Generate passwords for all component databases"
+          >
+            <KeyIcon aria-hidden /> Generate all
+          </button>
         </div>
 
         {[
@@ -177,12 +206,23 @@ export function DatabaseStep({ config, updateConfig }: Props) {
                 />
               </FormField>
               <FormField label="Database Password" required>
-                <TextInput
-                  value={config[key].pg_password}
-                  onChange={(v) => updateConfig({ [key]: { ...config[key], pg_password: v } })}
-                  placeholder={`${label} DB password`}
-                  type="password"
-                />
+                <div className="aap-form-row">
+                  <TextInput
+                    value={config[key].pg_password}
+                    onChange={(v) => updateConfig({ [key]: { ...config[key], pg_password: v } })}
+                    placeholder={`${label} DB password`}
+                    type="password"
+                  />
+                  <button
+                    type="button"
+                    className="aap-btn aap-btn--tertiary aap-btn--sm"
+                    onClick={() => updateConfig({ [key]: { ...config[key], pg_password: generatePassword() } })}
+                    title="Generate random password"
+                    aria-label={`Generate random password for ${label} database`}
+                  >
+                    <KeyIcon aria-hidden />
+                  </button>
+                </div>
               </FormField>
             </div>
           </div>

@@ -26,10 +26,10 @@ aap_version: "2.6"
 aap_installer_bundle: ansible-automation-platform-containerized-setup-2.6-6
 aap_install_dir: /opt/aap
 aap_gateway_host: "{{ azure_vm_name }}.{{ azure_location }}.cloudapp.azure.com"
-aap_admin_password: "{{ vault_aap_admin_password | default('ChangeMe!2026') }}"
+aap_admin_password: "{{ vault_aap_admin_password }}"       # Required — set via ansible-vault
 aap_registry_username: "{{ vault_registry_username }}"
 aap_registry_password: "{{ vault_registry_password }}"
-aap_pg_password: "{{ vault_pg_password | default('PgPass!2026') }}"
+aap_pg_password: "{{ vault_pg_password }}"                 # Required — set via ansible-vault
 
 # Azure AI Foundry (for Ansible Lightspeed / ALIA)
 ai_foundry_resource_group: "{{ azure_resource_group }}"

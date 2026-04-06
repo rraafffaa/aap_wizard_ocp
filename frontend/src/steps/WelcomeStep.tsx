@@ -1,143 +1,130 @@
-import React from 'react';
-import { ArrowRightIcon, CheckCircleIcon, HistoryIcon } from '@patternfly/react-icons';
+import React, { useState } from 'react';
+import { ArrowRightIcon, CheckCircleIcon, CheckIcon, HistoryIcon } from '@patternfly/react-icons';
 import { UIIcon } from '../components/ProductIcon';
 import { getLastSuccessfulDeployment } from '../types';
+import type { DeploymentConfig, DeployPlatform } from '../types';
 
 interface Props {
+  config: DeploymentConfig;
+  updateConfig: (partial: Partial<DeploymentConfig>) => void;
   onNext: () => void;
   onViewPastDeploy?: () => void;
 }
 
-export function WelcomeStep({ onNext, onViewPastDeploy }: Props) {
+export function WelcomeStep({ config, updateConfig, onNext, onViewPastDeploy }: Props) {
   const lastDeploy = getLastSuccessfulDeployment();
+  const [selected, setSelected] = useState<DeployPlatform | null>(config.platform || null);
+
+  const selectPlatform = (p: DeployPlatform) => {
+    setSelected(p);
+    updateConfig({ platform: p });
+  };
+
+  const handleContinue = () => {
+    if (selected) onNext();
+  };
+
   return (
     <div className="aap-welcome">
       <div className="aap-welcome__logo">
         <img
           src="./aap-logo-standard.svg"
           alt="Red Hat Ansible Automation Platform"
-          style={{ height: 80, width: 'auto' }}
+          className="aap-welcome__logo-img"
         />
       </div>
-      <h2 className="aap-welcome__subheading" style={{ marginTop: 16 }}>Deployment Wizard — Version 2.6</h2>
-
-      <p className="aap-step__description aap-mb-md">
-        Deploy AAP on RHEL (containerized) or OpenShift — guided setup in minutes.
+      <h2 className="aap-welcome__subheading">Deployment Wizard</h2>
+      <p className="aap-welcome__tagline">
+        Deploy AAP 2.6 in minutes — select your platform to begin.
       </p>
 
+      {/* Platform Selection Cards */}
+      <div className="aap-welcome__cards">
+        <fieldset className="aap-selection-group" aria-label="Deployment platform">
+          <div className="aap-selection-grid aap-selection-grid--2col">
+            <label
+              className={`aap-selection-card aap-selection-card--platform ${selected === 'containerized' ? 'aap-selection-card--selected' : ''}`}
+            >
+              <input
+                type="radio"
+                name="platform"
+                value="containerized"
+                checked={selected === 'containerized'}
+                onChange={() => selectPlatform('containerized')}
+                className="sr-only"
+              />
+              <div className="aap-selection-card__indicator" aria-hidden="true">
+                <CheckIcon />
+              </div>
+              <div className="aap-selection-card__icon" aria-hidden="true">
+                <UIIcon name="server" size={28} />
+              </div>
+              <div className="aap-selection-card__title">Containerized</div>
+              <div className="aap-selection-card__subtitle">RHEL + Podman</div>
+              {selected === 'containerized' && (
+                <ul className="aap-selection-card__requirements">
+                  <li><CheckCircleIcon aria-hidden="true" /> RHEL 9.4+, 16 GB RAM, 4 CPUs</li>
+                  <li><CheckCircleIcon aria-hidden="true" /> SSH access with sudo privileges</li>
+                  <li><CheckCircleIcon aria-hidden="true" /> Red Hat registry credentials</li>
+                </ul>
+              )}
+            </label>
+
+            <label
+              className={`aap-selection-card aap-selection-card--platform ${selected === 'openshift' ? 'aap-selection-card--selected' : ''}`}
+            >
+              <input
+                type="radio"
+                name="platform"
+                value="openshift"
+                checked={selected === 'openshift'}
+                onChange={() => selectPlatform('openshift')}
+                className="sr-only"
+              />
+              <div className="aap-selection-card__indicator" aria-hidden="true">
+                <CheckIcon />
+              </div>
+              <div className="aap-selection-card__icon" aria-hidden="true">
+                <UIIcon name="cluster" size={28} />
+              </div>
+              <div className="aap-selection-card__title">OpenShift</div>
+              <div className="aap-selection-card__subtitle">Operator-managed</div>
+              {selected === 'openshift' && (
+                <ul className="aap-selection-card__requirements">
+                  <li><CheckCircleIcon aria-hidden="true" /> OpenShift 4.14+ with cluster-admin</li>
+                  <li><CheckCircleIcon aria-hidden="true" /> AAP Operator in OperatorHub</li>
+                  <li><CheckCircleIcon aria-hidden="true" /> Bearer token for API access</li>
+                </ul>
+              )}
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      {/* Action Buttons */}
       <div className="aap-welcome__cta">
         <button
           type="button"
-          className="aap-btn aap-btn--primary"
-          onClick={onNext}
-          aria-label="Get started with the deployment wizard"
+          className="aap-btn aap-btn--primary aap-btn--lg"
+          onClick={handleContinue}
+          disabled={!selected}
+          aria-label="Continue to the deployment wizard"
         >
-          Get started
+          Continue
           <ArrowRightIcon />
         </button>
-        {lastDeploy && onViewPastDeploy && (
-          <button
-            type="button"
-            className="aap-btn aap-btn--secondary aap-ml-md"
-            onClick={onViewPastDeploy}
-            aria-label="View your last deployment"
-          >
-            <HistoryIcon /> View Last Deployment
-          </button>
-        )}
       </div>
-      {lastDeploy && (
-        <div className="aap-card aap-mt-lg" style={{ maxWidth: 480, margin: '24px auto 0' }}>
-          <div className="aap-card__header">
-            <h3 className="aap-card__title" style={{ fontSize: 14 }}>Previous Deployment</h3>
-            <span className="aap-badge aap-badge--success">Active</span>
-          </div>
-          <dl className="aap-dl" style={{ fontSize: 13 }}>
-            <div className="aap-dl__row">
-              <dt className="aap-dl__term">Host</dt>
-              <dd className="aap-dl__value aap-dl__value--mono">{lastDeploy.target_host}</dd>
-            </div>
-            <div className="aap-dl__row">
-              <dt className="aap-dl__term">Topology</dt>
-              <dd className="aap-dl__value">{lastDeploy.topology === 'growth' ? 'Growth (AIO)' : 'Enterprise'}</dd>
-            </div>
-            <div className="aap-dl__row">
-              <dt className="aap-dl__term">Deployed</dt>
-              <dd className="aap-dl__value">{new Date(lastDeploy.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd>
-            </div>
-          </dl>
-        </div>
+
+      {lastDeploy && onViewPastDeploy && (
+        <button
+          type="button"
+          className="aap-btn aap-btn--link aap-welcome__past-link"
+          onClick={onViewPastDeploy}
+          aria-label="View your last deployment"
+        >
+          <HistoryIcon /> View last deployment
+        </button>
       )}
-
-      <div className="aap-welcome__features">
-        <div className="aap-feature-card">
-          <div className="aap-feature-card__icon" aria-hidden="true">
-            <UIIcon name="settings" size={18} />
-          </div>
-          <div className="aap-feature-card__title">Guided Setup</div>
-          <div className="aap-feature-card__text">
-            Smart defaults and real-time validation.
-          </div>
-        </div>
-        <div className="aap-feature-card">
-          <div className="aap-feature-card__icon" aria-hidden="true">
-            <UIIcon name="checkup" size={18} />
-          </div>
-          <div className="aap-feature-card__title">Pre-flight Checks</div>
-          <div className="aap-feature-card__text">
-            Validates requirements before deployment.
-          </div>
-        </div>
-        <div className="aap-feature-card">
-          <div className="aap-feature-card__icon" aria-hidden="true">
-            <UIIcon name="speedometer" size={18} />
-          </div>
-          <div className="aap-feature-card__title">Live Progress</div>
-          <div className="aap-feature-card__text">
-            Streaming logs and phase tracking.
-          </div>
-        </div>
-      </div>
-
-      <div className="aap-welcome__requirements aap-mt-xl">
-        <div className="aap-requirements__title">What you&apos;ll need</div>
-        <ul className="aap-requirements__list" role="list">
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            Valid AAP subscription
-          </li>
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            Red Hat registry credentials (online install)
-          </li>
-        </ul>
-        <div className="aap-requirements__title" style={{ marginTop: 16 }}>Containerized (RHEL)</div>
-        <ul className="aap-requirements__list" role="list">
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            RHEL 9.4+ or 10+ with 16 GB RAM, 4 CPUs, 60 GB disk
-          </li>
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            Dedicated non-root user with sudo privileges
-          </li>
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            FQDN-resolvable hostname(s)
-          </li>
-        </ul>
-        <div className="aap-requirements__title" style={{ marginTop: 16 }}>OpenShift</div>
-        <ul className="aap-requirements__list" role="list">
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            OpenShift 4.14+ cluster with cluster-admin access
-          </li>
-          <li className="aap-requirements__item">
-            <CheckCircleIcon aria-hidden="true" />
-            AAP Operator available in OperatorHub
-          </li>
-        </ul>
-      </div>
     </div>
   );
 }

@@ -489,18 +489,18 @@ export type WizardStep =
 
 // Steps for containerized deployment
 const CONTAINERIZED_SECTIONS: { label: string; steps: WizardStep[] }[] = [
-  { label: 'Getting Started', steps: ['welcome', 'eula', 'platform'] },
+  { label: 'Getting Started', steps: ['welcome', 'eula'] },
   { label: 'Installation', steps: ['subscription', 'topology', 'target', 'hosts'] },
-  { label: 'Configuration', steps: ['components', 'database', 'network', 'credentials', 'advanced'] },
-  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete'] },
+  { label: 'Configuration', steps: ['database', 'network', 'credentials', 'advanced'] },
+  { label: 'Deployment', steps: ['preflight', 'deploy', 'complete'] },
 ];
 
 // Steps for OpenShift deployment
 const OPENSHIFT_SECTIONS: { label: string; steps: WizardStep[] }[] = [
-  { label: 'Getting Started', steps: ['welcome', 'eula', 'platform'] },
+  { label: 'Getting Started', steps: ['welcome', 'eula'] },
   { label: 'OpenShift', steps: ['cluster', 'namespace', 'operator', 'replicas'] },
-  { label: 'Configuration', steps: ['components', 'database', 'network', 'credentials', 'advanced'] },
-  { label: 'Deployment', steps: ['preflight', 'review', 'deploy', 'complete'] },
+  { label: 'Configuration', steps: ['database', 'network', 'credentials', 'advanced'] },
+  { label: 'Deployment', steps: ['preflight', 'deploy', 'complete'] },
 ];
 
 export function getStepSections(platform: DeployPlatform): { label: string; steps: WizardStep[] }[] {
@@ -510,41 +510,33 @@ export function getStepSections(platform: DeployPlatform): { label: string; step
 const CONTAINERIZED_STEPS: { id: WizardStep; label: string }[] = [
   { id: 'welcome', label: 'Welcome' },
   { id: 'eula', label: 'License Agreement' },
-  { id: 'platform', label: 'Platform' },
   { id: 'subscription', label: 'Installation Type' },
   { id: 'topology', label: 'Topology' },
   { id: 'target', label: 'SSH Target' },
   { id: 'hosts', label: 'Hosts' },
-  { id: 'components', label: 'Components' },
   { id: 'database', label: 'Database' },
   { id: 'network', label: 'Network & TLS' },
   { id: 'credentials', label: 'Credentials' },
   { id: 'advanced', label: 'Advanced Variables' },
   { id: 'preflight', label: 'Pre-flight Checks' },
-  { id: 'review', label: 'Review' },
   { id: 'deploy', label: 'Deploy' },
   { id: 'complete', label: 'Complete' },
-  { id: 'onboarding', label: 'Get Started' },
 ];
 
 const OPENSHIFT_STEPS: { id: WizardStep; label: string }[] = [
   { id: 'welcome', label: 'Welcome' },
   { id: 'eula', label: 'License Agreement' },
-  { id: 'platform', label: 'Platform' },
   { id: 'cluster', label: 'Cluster Connection' },
   { id: 'namespace', label: 'Namespace & Storage' },
   { id: 'operator', label: 'AAP Operator' },
   { id: 'replicas', label: 'Scaling' },
-  { id: 'components', label: 'Components' },
   { id: 'database', label: 'Database' },
   { id: 'network', label: 'Routes & TLS' },
   { id: 'credentials', label: 'Credentials' },
   { id: 'advanced', label: 'Advanced Variables' },
   { id: 'preflight', label: 'Pre-flight Checks' },
-  { id: 'review', label: 'Review' },
   { id: 'deploy', label: 'Deploy' },
   { id: 'complete', label: 'Complete' },
-  { id: 'onboarding', label: 'Get Started' },
 ];
 
 export function getWizardSteps(platform: DeployPlatform): { id: WizardStep; label: string }[] {

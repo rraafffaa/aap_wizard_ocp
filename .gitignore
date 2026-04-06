@@ -39,3 +39,6 @@ htmlcov/
 
 # Misc
 .cursor/plans/
+
+# Claude Code
+.claude/

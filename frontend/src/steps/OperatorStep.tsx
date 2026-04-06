@@ -37,13 +37,13 @@ export function OperatorStep({ config, updateConfig }: Props) {
   const checkOperatorStatus = async () => {
     setStatus('checking');
     try {
-      const qs = new URLSearchParams({ api_url: ocp.api_url, token: ocp.token, namespace: ocp.namespace });
-      const res = await fetch(`/api/ocp/operator/status?${qs}`, {
-        method: 'GET',
+      const res = await fetch('/api/ocp/operator/status', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getStoredToken()}`,
         },
+        body: JSON.stringify({ api_url: ocp.api_url, token: ocp.token, namespace: ocp.namespace }),
       });
       const data = await res.json();
       if (data.installed) {
@@ -94,9 +94,13 @@ export function OperatorStep({ config, updateConfig }: Props) {
             startStep('csv');
           }
           try {
-            const pollQs = new URLSearchParams({ api_url: ocp.api_url, token: ocp.token, namespace: ocp.namespace });
-            const pollRes = await fetch(`/api/ocp/operator/status?${pollQs}`, {
-              headers: { 'Authorization': `Bearer ${getStoredToken()}` },
+            const pollRes = await fetch('/api/ocp/operator/status', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getStoredToken()}`,
+              },
+              body: JSON.stringify({ api_url: ocp.api_url, token: ocp.token, namespace: ocp.namespace }),
             });
             const pollData = await pollRes.json();
             if (pollData.installed) {

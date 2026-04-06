@@ -160,7 +160,12 @@ async def login(req: LoginRequest, request: Request):
 
 @app.post("/api/auth/sso", response_model=LoginResponse)
 async def sso_login():
-    """Authenticate via SSO — issues a token without registry validation."""
+    """Authenticate via SSO — issues a token without registry validation.
+
+    Only available when ALLOW_SSO_BYPASS=true (e.g. Electron desktop mode).
+    """
+    if not os.environ.get("ALLOW_SSO_BYPASS", "").lower() in ("true", "1", "yes"):
+        raise HTTPException(403, "SSO bypass is disabled. Set ALLOW_SSO_BYPASS=true to enable.")
     username = "sso-user"
     token, expires_at = create_token(username)
     return LoginResponse(token=token, username=username, expires_at=expires_at)
@@ -1139,9 +1144,10 @@ async def ocp_connect(req: OCPConnectRequest):
         raise HTTPException(500, f"Connection failed: {exc}")
 
 
-@app.get("/api/ocp/cluster-info")
-async def ocp_cluster_info(api_url: str = Query(...), token: str = Query(...)):
+@app.post("/api/ocp/cluster-info")
+async def ocp_cluster_info(body: dict):
     """Get comprehensive OCP cluster information."""
+    api_url, token = body["api_url"], body["token"]
     try:
         client = OCPClient(api_url=api_url, token=token)
         try:
@@ -1153,9 +1159,10 @@ async def ocp_cluster_info(api_url: str = Query(...), token: str = Query(...)):
         raise HTTPException(500, f"Failed to get cluster info: {exc}")
 
 
-@app.get("/api/ocp/operators")
-async def ocp_get_operators(api_url: str = Query(...), token: str = Query(...)):
+@app.post("/api/ocp/operators")
+async def ocp_get_operators(body: dict):
     """Get list of installed operators."""
+    api_url, token = body["api_url"], body["token"]
     try:
         client = OCPClient(api_url=api_url, token=token)
         try:
@@ -1223,13 +1230,11 @@ async def ocp_install_operator(req: OCPOperatorInstallRequest):
         raise HTTPException(500, f"Failed to install operator: {exc}")
 
 
-@app.get("/api/ocp/operator/status")
-async def ocp_operator_status(
-    api_url: str = Query(...),
-    token: str = Query(...),
-    namespace: str = Query("openshift-operators"),
-):
+@app.post("/api/ocp/operator/status")
+async def ocp_operator_status(body: dict):
     """Check if AAP operator CSV exists and is ready."""
+    api_url, token = body["api_url"], body["token"]
+    namespace = body.get("namespace", "openshift-operators")
     try:
         client = OCPClient(api_url=api_url, token=token)
         try:
@@ -1374,13 +1379,11 @@ async def ocp_preflight(body: dict = Body(...)):
         raise HTTPException(500, f"Preflight check failed: {exc}")
 
 
-@app.get("/api/ocp/routes")
-async def ocp_get_routes(
-    api_url: str = Query(...),
-    token: str = Query(...),
-    namespace: str = Query(...),
-):
+@app.post("/api/ocp/routes")
+async def ocp_get_routes(body: dict):
     """Get OpenShift routes in a namespace."""
+    api_url, token = body["api_url"], body["token"]
+    namespace = body["namespace"]
     try:
         client = OCPClient(api_url=api_url, token=token)
         try:
@@ -1552,12 +1555,11 @@ async def onboard_launch_job(req: OnboardLaunchRequest):
         raise HTTPException(500, f"Job launch failed: {exc}")
 
 
-@app.get("/api/onboard/status")
-async def onboard_get_status(
-    gateway_url: str = Query(...),
-    admin_password: str = Query(...),
-):
+@app.post("/api/onboard/status")
+async def onboard_get_status(body: dict):
     """Get onboarding progress/status."""
+    gateway_url = body["gateway_url"]
+    admin_password = body["admin_password"]
     try:
         onboarder = AAPOnboarder(
             gateway_url=gateway_url,
