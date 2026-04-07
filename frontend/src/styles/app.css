@@ -541,7 +541,12 @@ a:hover {
 }
 
 .aap-card + .aap-card {
-  margin-top: var(--aap-space-md);
+  margin-top: var(--aap-space-sm);
+}
+
+.aap-card--compact {
+  padding: var(--aap-space-sm);
+  box-shadow: none;
 }
 
 .aap-card--interactive {
@@ -604,10 +609,10 @@ a:hover {
 }
 
 .aap-step__description {
-  font-size: var(--aap-font-base);
-  color: var(--aap-text-secondary);
-  margin-top: 6px;
-  line-height: 1.6;
+  font-size: var(--aap-font-sm);
+  color: var(--aap-text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
   max-width: 640px;
 }
 
@@ -648,10 +653,65 @@ a:hover {
 }
 
 .aap-form-group__helper {
-  font-size: var(--aap-font-sm);
+  font-size: 11px;
   color: var(--aap-text-muted);
-  margin-top: var(--aap-space-xs);
-  line-height: 1.4;
+  margin-top: 2px;
+  line-height: 1.35;
+}
+
+/* Tooltip — hover info icon like Azure Portal */
+.aap-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+  cursor: help;
+}
+
+.aap-tooltip-icon {
+  color: var(--aap-text-muted);
+  font-size: 13px;
+  transition: color 150ms ease;
+}
+
+.aap-tooltip-wrapper:hover .aap-tooltip-icon {
+  color: var(--aap-blue);
+}
+
+.aap-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--aap-text-primary);
+  color: #fff;
+  font-size: var(--aap-font-sm);
+  font-weight: 400;
+  line-height: 1.45;
+  padding: 8px 12px;
+  border-radius: var(--aap-radius-md);
+  white-space: normal;
+  width: max-content;
+  max-width: 280px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.aap-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--aap-text-primary);
+}
+
+.aap-tooltip-wrapper:hover .aap-tooltip {
+  opacity: 1;
 }
 
 .aap-form-group__error {
@@ -829,7 +889,7 @@ a:hover {
 .aap-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--aap-space-md);
+  gap: var(--aap-space-sm);
 }
 
 .aap-form-row--3col {
@@ -1022,10 +1082,15 @@ a:hover {
 .aap-alert {
   display: flex;
   gap: var(--aap-space-sm);
-  padding: var(--aap-space-md);
+  padding: var(--aap-space-sm) var(--aap-space-md);
   border-radius: var(--aap-radius-lg);
   font-size: var(--aap-font-md);
   line-height: 1.5;
+}
+
+.aap-alert--compact {
+  padding: var(--aap-space-xs) var(--aap-space-sm);
+  font-size: var(--aap-font-sm);
 }
 
 .aap-alert__icon {

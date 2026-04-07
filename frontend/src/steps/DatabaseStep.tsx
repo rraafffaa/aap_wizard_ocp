@@ -86,26 +86,20 @@ export function DatabaseStep({ config, updateConfig }: Props) {
       )}
 
       {isOCP && (
-        <div className="aap-alert aap-alert--info aap-mb-lg">
+        <div className="aap-alert aap-alert--info aap-alert--compact aap-mb-lg">
           <span className="aap-alert__icon" aria-hidden>
             <ExclamationTriangleIcon />
           </span>
           <div className="aap-alert__content">
-            <div className="aap-alert__title">Operator-Managed Database</div>
-            <p className="aap-text-muted aap-text-sm">
-              The operator manages PostgreSQL by default. External database is optional.
-            </p>
+            <span className="aap-text-sm">Operator manages PostgreSQL by default. External is optional.</span>
           </div>
         </div>
       )}
 
       {/* PostgreSQL admin credentials */}
       <div className="aap-card aap-mb-lg">
-        <div className="aap-card__header">
-          <h3 className="aap-card__title">PostgreSQL Administrator</h3>
-        </div>
         <div className="aap-form-row">
-          <FormField label="Admin Username" required>
+          <FormField label="Admin Username" required tooltip="The PostgreSQL superuser account used by the installer to create component databases and roles.">
             <TextInput
               value={config.database.admin_username}
               onChange={(v) => updateConfig({ database: { ...config.database, admin_username: v } })}
@@ -141,7 +135,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
             <h3 className="aap-card__title">External Database Connection</h3>
           </div>
           <div className="aap-form-row">
-            <FormField label="Database Host" required>
+            <FormField label="Database Host" required tooltip="FQDN or IP of your external PostgreSQL server. Must be reachable from all AAP nodes.">
               <TextInput
                 value={config.database.host}
                 onChange={(v) => updateConfig({ database: { ...config.database, host: v } })}

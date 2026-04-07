@@ -16,7 +16,7 @@ export const SIZING = [
 ];
 
 export function TopologyStep({ config, updateConfig }: Props) {
-  const [showSizing, setShowSizing] = useState(false);
+  const [showSizing, setShowSizing] = useState(true);
 
   const setTopology = (t: Topology) => {
     const newConfig: Partial<DeploymentConfig> = { topology: t };
@@ -125,11 +125,6 @@ export function TopologyStep({ config, updateConfig }: Props) {
           <div className="aap-selection-card__description">
             Single host — ideal for dev and small deployments.
           </div>
-          <ul className="aap-selection-card__features">
-            <li><CheckIcon aria-hidden="true" /> All components on one host</li>
-            <li><CheckIcon aria-hidden="true" /> Managed PostgreSQL included</li>
-            <li><CheckIcon aria-hidden="true" /> 16 GB RAM / 4 CPUs minimum</li>
-          </ul>
         </div>
 
         <div
@@ -151,11 +146,6 @@ export function TopologyStep({ config, updateConfig }: Props) {
           <div className="aap-selection-card__description">
             Multi-node with HA and dedicated execution nodes.
           </div>
-          <ul className="aap-selection-card__features">
-            <li><CheckIcon aria-hidden="true" /> Multi-node redundancy</li>
-            <li><CheckIcon aria-hidden="true" /> Dedicated execution & hop nodes</li>
-            <li><CheckIcon aria-hidden="true" /> External database + Redis cluster</li>
-          </ul>
         </div>
       </div>
 
@@ -174,14 +164,10 @@ export function TopologyStep({ config, updateConfig }: Props) {
           <tbody>
             {[
               ['Minimum hosts', '1', '6+'],
-              ['Platform Gateway nodes', '1', '2+'],
-              ['Automation Controller nodes', '1', '2+'],
-              ['Automation Hub nodes', '1', '2+'],
-              ['Event-Driven Ansible nodes', '1', '2+'],
               ['Execution nodes', 'Co-located', 'Dedicated'],
-              ['Database', 'Managed (co-located)', 'External required'],
+              ['Database', 'Managed', 'External required'],
               ['Redis', 'Standalone', 'Standalone or Cluster'],
-              ['RAM per node', '16 GB (32 for seeding)', '16 GB'],
+              ['RAM per node', '16 GB', '16 GB'],
               ['High availability', 'No', 'Yes'],
             ].map(([feature, growth, enterprise]) => (
               <tr key={feature}>

@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import type { DeploymentConfig } from '../types';
 import { FormField, TextInput } from '../components/FormField';
 import { KeyIcon } from '@patternfly/react-icons';
-import { ProductIcon, type ProductName } from '../components/ProductIcon';
-
 interface Props {
   config: DeploymentConfig;
   updateConfig: (partial: Partial<DeploymentConfig>) => void;
@@ -17,10 +15,10 @@ export function generatePassword(length = 24): string {
 }
 
 const COMPONENTS = [
-  { key: 'gateway' as const, label: 'Platform Gateway', product: 'gateway' as ProductName, desc: 'Gateway admin account' },
-  { key: 'controller' as const, label: 'Automation Controller', product: 'controller' as ProductName, desc: 'Controller admin account' },
-  { key: 'hub' as const, label: 'Automation Hub', product: 'hub' as ProductName, desc: 'Hub admin account' },
-  { key: 'eda' as const, label: 'Event-Driven Ansible', product: 'eda' as ProductName, desc: 'EDA admin account' },
+  { key: 'gateway' as const, label: 'Gateway' },
+  { key: 'controller' as const, label: 'Controller' },
+  { key: 'hub' as const, label: 'Hub' },
+  { key: 'eda' as const, label: 'EDA' },
 ] as const;
 
 export function CredentialsStep({ config, updateConfig }: Props) {
@@ -67,9 +65,9 @@ export function CredentialsStep({ config, updateConfig }: Props) {
               aria-label="Generate unique passwords for each component"
             >
               <KeyIcon aria-hidden />
-              Generate passwords
+              Generate All
             </button>
-            <span className="aap-text-muted aap-text-sm">— or —</span>
+            <span className="aap-text-muted aap-text-sm">or</span>
             <FormField label="Shared password" required={false}>
               <TextInput
                 value={sharedPassword}
@@ -91,18 +89,11 @@ export function CredentialsStep({ config, updateConfig }: Props) {
         </div>
       </section>
 
-      {COMPONENTS.map(({ key, label, product, desc }) => (
-        <section key={key} className="aap-step__section">
-          <div className="aap-card">
-            <div className="aap-flex-row aap-mb-md">
-              <div className="aap-selection-card__icon" aria-hidden>
-                <ProductIcon product={product} size={32} />
-              </div>
-              <div>
-                <div className="aap-selection-card__title">{label}</div>
-                <div className="aap-selection-card__description">{desc}</div>
-              </div>
-            </div>
+      <div className="aap-card">
+        <h3 className="aap-card__title">Component Passwords</h3>
+        {COMPONENTS.map(({ key, label }) => (
+          <div key={key} className="aap-step__section">
+            <div className="aap-step__section-title">{label}</div>
             <div className="aap-form-row">
               <FormField label="Admin Password" required>
                 <TextInput
@@ -127,8 +118,8 @@ export function CredentialsStep({ config, updateConfig }: Props) {
               </button>
             </div>
           </div>
-        </section>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

@@ -20,9 +20,6 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
     <div className="aap-step">
       <div className="aap-step__header">
         <h2 className="aap-step__title">Installation Type</h2>
-        <p className="aap-step__description">
-          Choose how AAP container images will be sourced.
-        </p>
       </div>
 
       <div className="aap-step__section">
@@ -67,9 +64,6 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
       {isOnline && (
         <div className="aap-card aap-mt-lg">
           <h3 className="aap-card__title">Registry Credentials</h3>
-          <p className="aap-card__description aap-mb-md">
-            Required to pull container images from <code>registry.redhat.io</code>.
-          </p>
           <div className="aap-form-row">
             <FormField label="Registry Username" required>
               <TextInput
@@ -119,10 +113,9 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
       )}
 
       <div className="aap-card aap-mt-lg">
-        <h3 className="aap-card__title">Installation Directory</h3>
         <FormField
-          label="Install Directory"
-          helperText="Where AAP stores its data and configuration."
+          label="Installation Directory"
+          tooltip="Root directory for AAP data, container storage, and config files. Ensure this volume has at least 40 GB free."
         >
           <TextInput
             value={config.install_dir}
@@ -133,14 +126,6 @@ export function SubscriptionStep({ config, updateConfig }: Props) {
         </FormField>
       </div>
 
-      <div className="aap-alert aap-alert--info aap-mt-lg">
-        <span className="aap-alert__icon" aria-hidden><InfoCircleIcon /></span>
-        <div className="aap-alert__content">
-          <span className="aap-text-sm">
-            Upload your subscription manifest through the AAP web interface after setup completes.
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

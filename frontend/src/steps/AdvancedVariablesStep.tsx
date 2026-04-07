@@ -120,9 +120,6 @@ function Section({
         {nonDefaultCount > 0 && (
           <span className="aap-badge aap-badge--info">{nonDefaultCount} modified</span>
         )}
-        <span style={{ fontSize: 12, color: 'var(--aap-text-muted)' }}>
-          {fields.length} variables
-        </span>
       </button>
 
       {open && (
@@ -158,14 +155,11 @@ function FieldRow({
 
   return (
     <div className="aap-form-group" style={{ marginBottom: 0 }}>
-      <div className="aap-form-group__label" style={{ justifyContent: 'space-between' }}>
+      <div className="aap-form-group__label">
         <span>
           {field.label}
           {isModified && <span style={{ color: 'var(--aap-blue)', marginLeft: 6, fontSize: 10 }}>modified</span>}
         </span>
-        <code style={{ fontSize: 11, color: 'var(--aap-text-muted)', fontFamily: 'var(--aap-font-mono)' }}>
-          {field.inventoryVar}
-        </code>
       </div>
 
       {field.type === 'boolean' ? (

@@ -110,7 +110,7 @@ export function TargetStep({ config, updateConfig }: Props) {
         </div>
 
         <div className="aap-form-row aap-mb-md">
-          <FormField label="Target Host IP / Hostname" required helperText="Example: 10.0.0.15 or aap-vm.example.com">
+          <FormField label="Target Host IP / Hostname" required>
             <TextInput
               value={config.target_host}
               onChange={(v) => { updateConfig({ target_host: v }); setResult(null); }}
@@ -118,7 +118,7 @@ export function TargetStep({ config, updateConfig }: Props) {
               mono
             />
           </FormField>
-          <FormField label="SSH Port" required helperText="Valid range: 1–65535">
+          <FormField label="SSH Port" required tooltip="The SSH port on the target host. Change only if your host uses a non-standard port for security hardening.">
             <NumberInput
               value={config.target_ssh_port}
               onChange={(v) => { updateConfig({ target_ssh_port: v }); setResult(null); }}
@@ -149,9 +149,7 @@ export function TargetStep({ config, updateConfig }: Props) {
 
       <div className="aap-card">
         <div className="aap-card__header">
-          <div>
-            <div className="aap-card__title">Verify Connection</div>
-          </div>
+          <div />
           <button
             type="button"
             className="aap-btn aap-btn--primary"
@@ -196,10 +194,6 @@ export function TargetStep({ config, updateConfig }: Props) {
                     <dt className="aap-dl__term">OS</dt>
                     <dd className="aap-dl__value">{result.os}</dd>
                   </div>
-                  <div className="aap-dl__row">
-                    <dt className="aap-dl__term">Latency</dt>
-                    <dd className="aap-dl__value">{result.latency_ms} ms</dd>
-                  </div>
                 </dl>
               </div>
             </div>
@@ -216,11 +210,6 @@ export function TargetStep({ config, updateConfig }: Props) {
           </div>
         )}
 
-        {!result && !error && !verifying && (
-          <p className="aap-text-sm aap-text-muted aap-mt-md">
-            Enter credentials above, then verify.
-          </p>
-        )}
       </div>
     </div>
   );

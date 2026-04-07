@@ -1,21 +1,28 @@
 import React, { useState, useId } from 'react';
-import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { EyeIcon, EyeSlashIcon, ExclamationCircleIcon, InfoCircleIcon } from '@patternfly/react-icons';
 
 interface FormFieldProps {
   label: string;
   helperText?: string;
+  tooltip?: string;
   required?: boolean;
   error?: string;
   children: React.ReactNode;
 }
 
-export function FormField({ label, helperText, required, error, children }: FormFieldProps) {
+export function FormField({ label, helperText, tooltip, required, error, children }: FormFieldProps) {
   const id = useId();
   return (
     <div className="aap-form-group">
       <label className="aap-form-group__label" htmlFor={id}>
         {label}
         {required && <span className="aap-form-group__required" aria-hidden="true">*</span>}
+        {tooltip && (
+          <span className="aap-tooltip-wrapper">
+            <InfoCircleIcon className="aap-tooltip-icon" aria-hidden="true" />
+            <span className="aap-tooltip" role="tooltip">{tooltip}</span>
+          </span>
+        )}
       </label>
       {React.Children.map(children, (child) =>
         React.isValidElement(child)

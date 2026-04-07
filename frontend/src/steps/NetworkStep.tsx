@@ -63,7 +63,7 @@ export function NetworkStep({ config, updateConfig }: Props) {
           <h3 className="aap-card__title">Service Ports</h3>
         </div>
         <div className="aap-form-row aap-form-row--3col">
-          <FormField label="HTTPS Port" helperText="Gateway HTTPS listener (default: 443)">
+          <FormField label="HTTPS Port">
             <NumberInput
               value={config.network.https_port}
               onChange={(v) => updateNetwork({ https_port: v })}
@@ -71,7 +71,7 @@ export function NetworkStep({ config, updateConfig }: Props) {
               max={65535}
             />
           </FormField>
-          <FormField label="HTTP Port" helperText="Gateway HTTP listener (default: 80)">
+          <FormField label="HTTP Port">
             <NumberInput
               value={config.network.http_port}
               onChange={(v) => updateNetwork({ http_port: v })}
@@ -79,7 +79,7 @@ export function NetworkStep({ config, updateConfig }: Props) {
               max={65535}
             />
           </FormField>
-          <FormField label="Receptor Port" helperText="Receptor handles mesh communication between AAP nodes (default: 27199)">
+          <FormField label="Receptor Port" tooltip="Receptor enables mesh networking between AAP nodes for job distribution and remote execution across isolated networks.">
             <NumberInput
               value={config.network.receptor_port}
               onChange={(v) => updateNetwork({ receptor_port: v })}
@@ -100,26 +100,15 @@ export function NetworkStep({ config, updateConfig }: Props) {
           <SwitchInput
             checked={!config.network.tls.disable_https}
             onChange={(v) => updateTLS({ disable_https: !v })}
-            label="Enable HTTPS (recommended for production)"
+            label="Enable HTTPS (recommended)"
           />
         </div>
 
         {!config.network.tls.disable_https && (
           <>
-            <div className="aap-alert aap-alert--info aap-mb-md">
-              <span className="aap-alert__icon" aria-hidden>
-                <InfoCircleIcon />
-              </span>
-              <div className="aap-alert__content">
-                <p className="aap-text-muted aap-text-sm">
-                  Self-signed certificates are generated if none are provided.
-                </p>
-              </div>
-            </div>
-
             <FormField
               label="Custom CA Certificate (PEM)"
-              helperText="Path to CA certificate file"
+              tooltip="Provide your organization's Certificate Authority if you want browsers and API clients to trust AAP without extra configuration."
             >
               <TextInput
                 value={config.network.tls.custom_ca_cert}
@@ -229,11 +218,6 @@ export function NetworkStep({ config, updateConfig }: Props) {
             })}
           </tbody>
         </table>
-        {!canCheckPorts && (
-          <p className="aap-text-sm aap-text-muted aap-mt-sm">
-            Configure SSH target credentials first to test port availability.
-          </p>
-        )}
       </div>
     </div>
   );

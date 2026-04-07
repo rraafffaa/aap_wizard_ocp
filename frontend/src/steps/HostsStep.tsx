@@ -62,21 +62,9 @@ export function HostsStep({ config, updateConfig }: Props) {
         <h2 className="aap-step__title">Hosts</h2>
       </div>
 
-      <div className="aap-step__section">
-        <h3 className="aap-step__section-title">
-          {isGrowth ? 'AAP Host' : 'Component Hosts'}
-        </h3>
-      </div>
-
       {isGrowth ? (
         <div className="aap-card aap-mb-lg">
-          <div className="aap-card__header">
-            <h3 className="aap-card__title">All-in-One Host</h3>
-            <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-              All components installed on a single host.
-            </p>
-          </div>
-          <FormField label="Hostname (FQDN)" required helperText="Must be a fully qualified domain name resolvable via DNS">
+          <FormField label="Hostname (FQDN)" required tooltip="Must be a fully qualified domain name resolvable via DNS. All components will be installed on this single host.">
             <TextInput
               value={config.gateway.hosts[0] || ''}
               onChange={(v) => updateGatewayHost(0, v)}
@@ -89,10 +77,7 @@ export function HostsStep({ config, updateConfig }: Props) {
           {/* Gateway hosts */}
           <div className="aap-card aap-mb-lg">
             <div className="aap-card__header">
-              <h3 className="aap-card__title">Platform Gateway Hosts</h3>
-              <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-                At least 2 recommended for redundancy.
-              </p>
+              <h3 className="aap-card__title">Gateway</h3>
             </div>
             {config.gateway.hosts.map((host, i) => (
               <div key={i} className="aap-host-item aap-mb-sm">
@@ -123,7 +108,7 @@ export function HostsStep({ config, updateConfig }: Props) {
           {/* Controller hosts */}
           <div className="aap-card aap-mb-lg">
             <div className="aap-card__header">
-              <h3 className="aap-card__title">Automation Controller Hosts</h3>
+              <h3 className="aap-card__title">Controller</h3>
             </div>
             {config.controller.hosts.map((host, i) => (
               <div key={i} className="aap-host-item aap-mb-sm">
@@ -158,7 +143,7 @@ export function HostsStep({ config, updateConfig }: Props) {
           {/* Hub hosts */}
           <div className="aap-card aap-mb-lg">
             <div className="aap-card__header">
-              <h3 className="aap-card__title">Automation Hub Hosts</h3>
+              <h3 className="aap-card__title">Hub</h3>
             </div>
             {config.hub.hosts.map((host, i) => (
               <div key={i} className="aap-host-item aap-mb-sm">
@@ -190,7 +175,7 @@ export function HostsStep({ config, updateConfig }: Props) {
           {/* EDA hosts */}
           <div className="aap-card aap-mb-lg">
             <div className="aap-card__header">
-              <h3 className="aap-card__title">Event-Driven Ansible Hosts</h3>
+              <h3 className="aap-card__title">EDA</h3>
             </div>
             {config.eda.hosts.map((host, i) => (
               <div key={i} className="aap-host-item aap-mb-sm">
@@ -223,9 +208,6 @@ export function HostsStep({ config, updateConfig }: Props) {
           <div className="aap-card aap-mb-lg">
             <div className="aap-card__header">
               <h3 className="aap-card__title">Execution & Hop Nodes</h3>
-              <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-                Execution nodes run jobs. Hop nodes relay mesh traffic.
-              </p>
             </div>
             {config.execution_nodes.map((node, i) => (
               <div key={i} className="aap-host-item aap-mb-sm">
@@ -290,9 +272,6 @@ export function HostsStep({ config, updateConfig }: Props) {
         <div className="aap-card aap-mb-lg">
           <div className="aap-card__header">
             <h3 className="aap-card__title">SSH Connection Settings</h3>
-            <p className="aap-card__description aap-text-muted aap-text-sm aap-mb-md">
-              SSH access for remote host connections.
-            </p>
           </div>
           {config.hosts.length === 0 ? (
             <div className="aap-host-list__empty aap-text-muted aap-text-sm">No remote hosts added yet.</div>
