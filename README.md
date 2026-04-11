@@ -171,4 +171,4 @@ docker run -d -p 443:443 --name aap-wizard aap-wizard
 
 ## License
 
-Apache-2.0 / MIT dual license.
+MIT License. See [LICENSE](LICENSE) for details.

@@ -83,7 +83,7 @@ export function TargetStep({ config, updateConfig }: Props) {
       setResult(res);
     } catch (err: unknown) {
       clearAllTimeouts();
-      const message = (err as Error).message || 'Could not reach the backend. Is the server running on port 8000?';
+      const message = (err as Error).message || 'Connection failed. Please check your network and try again.';
       // Fail whichever step is currently running (or the last one)
       const runningItem = items.find(i => i.status === 'running');
       failStep(runningItem?.id ?? 'resolve', message);

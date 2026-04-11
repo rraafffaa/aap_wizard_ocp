@@ -1,52 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { WIZARD_STEPS, type WizardStep } from '../types';
-
-const RECENT_KEY = 'aap-wizard-recent-commands';
-const MAX_RECENT = 5;
-
-export interface FuzzyResult {
-  matches: boolean;
-  score: number;
-  indices: number[];
-}
-
-export function fuzzyMatch(query: string, text: string): FuzzyResult {
-  if (!query) return { matches: true, score: 0, indices: [] };
-  const lower = text.toLowerCase();
-  const q = query.toLowerCase();
-  if (lower.includes(q)) {
-    const idx = lower.indexOf(q);
-    const indices = Array.from({ length: q.length }, (_, i) => idx + i);
-    const score = q.length === lower.length ? 100 : 50 + (q.length / lower.length) * 50;
-    return { matches: true, score, indices };
-  }
-  let qi = 0;
-  const indices: number[] = [];
-  for (let i = 0; i < lower.length && qi < q.length; i++) {
-    if (lower[i] === q[qi]) { indices.push(i); qi++; }
-  }
-  if (qi === q.length) {
-    return { matches: true, score: (q.length / lower.length) * 30, indices };
-  }
-  return { matches: false, score: 0, indices: [] };
-}
-
-export function loadRecentCommands(): string[] {
-  try {
-    const stored = localStorage.getItem(RECENT_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
-}
-
-export function saveRecentCommand(commandId: string): void {
-  const recent = loadRecentCommands().filter((c) => c !== commandId);
-  recent.unshift(commandId);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
-}
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { getWizardSteps, type WizardStep, type DeployPlatform } from '../types';
 
 interface Command {
   id: string;
   label: string;
+  shortcut?: string;
   category: 'navigate' | 'action';
 }
 
@@ -56,60 +14,127 @@ interface CommandPaletteProps {
   onNavigate: (step: WizardStep) => void;
   onAction: (action: string) => void;
   currentStep: string;
+  platform: DeployPlatform;
 }
 
-export function CommandPalette({ isOpen, onClose, onNavigate, onAction, currentStep }: CommandPaletteProps) {
+export function CommandPalette({ isOpen, onClose, onNavigate, onAction, currentStep, platform }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  const commands: Command[] = WIZARD_STEPS.map((s) => ({
-    id: `nav-${s.id}`,
-    label: `Go to ${s.label}`,
-    category: 'navigate',
-  }));
+  const steps = getWizardSteps(platform);
 
-  const filtered = commands.filter((cmd) => fuzzyMatch(query, cmd.label).matches);
+  const commands: Command[] = [
+    ...steps.map((s) => ({
+      id: `nav-${s.id}`,
+      label: s.label,
+      category: 'navigate' as const,
+    })),
+    { id: 'action-export', label: 'Export Configuration', category: 'action' },
+    { id: 'action-settings', label: 'Open Settings', shortcut: '', category: 'action' },
+  ];
+
+  const filtered = commands.filter((cmd) => {
+    if (!query) return true;
+    return cmd.label.toLowerCase().includes(query.toLowerCase());
+  });
 
   useEffect(() => {
-    if (isOpen) { inputRef.current?.focus(); setQuery(''); }
+    if (isOpen) {
+      inputRef.current?.focus();
+      setQuery('');
+      setSelectedIndex(0);
+    }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [query]);
+
+  const execute = useCallback((cmd: Command) => {
+    if (cmd.category === 'navigate') {
+      onNavigate(cmd.id.replace('nav-', '') as WizardStep);
+    } else {
+      onAction(cmd.id.replace('action-', ''));
+    }
+    onClose();
+  }, [onNavigate, onAction, onClose]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
-    if (e.key === 'Enter' && filtered.length > 0) {
-      const cmd = filtered[0];
-      saveRecentCommand(cmd.id);
-      if (cmd.category === 'navigate') {
-        const stepId = cmd.id.replace('nav-', '') as WizardStep;
-        onNavigate(stepId);
-      } else {
-        onAction(cmd.id);
-      }
-      onClose();
+    if (e.key === 'Escape') { onClose(); return; }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((i) => Math.max(i - 1, 0));
+    }
+    if (e.key === 'Enter' && filtered[selectedIndex]) {
+      execute(filtered[selectedIndex]);
     }
   };
 
+  // Scroll selected item into view
+  useEffect(() => {
+    const item = listRef.current?.children[selectedIndex] as HTMLElement | undefined;
+    item?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex]);
+
+  if (!isOpen) return null;
+
   return (
-    <div className="aap-cmd-palette" onKeyDown={handleKeyDown} tabIndex={-1}>
-      <input
-        ref={inputRef}
-        type="text"
-        placeholder="Type a command..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-      <ul>
-        {filtered.map((cmd) => (
-          <li key={cmd.id} onClick={() => {
-            saveRecentCommand(cmd.id);
-            if (cmd.category === 'navigate') onNavigate(cmd.id.replace('nav-', '') as WizardStep);
-            else onAction(cmd.id);
-            onClose();
-          }}>{cmd.label}</li>
-        ))}
-      </ul>
+    <div className="aap-cmd-overlay" onClick={onClose}>
+      <div className="aap-cmd-palette" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Command palette">
+        <div className="aap-cmd-palette__input-wrapper">
+          <svg className="aap-cmd-palette__search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path d="M11.5 11.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            className="aap-cmd-palette__input"
+            placeholder="Search steps and actions..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            aria-activedescendant={filtered[selectedIndex]?.id}
+          />
+          <kbd className="aap-cmd-palette__kbd">esc</kbd>
+        </div>
+        <div className="aap-cmd-palette__list" ref={listRef} role="listbox">
+          {filtered.length === 0 && (
+            <div className="aap-cmd-palette__empty">No results found</div>
+          )}
+          {filtered.map((cmd, i) => {
+            const isActive = cmd.id === `nav-${currentStep}`;
+            return (
+              <div
+                key={cmd.id}
+                id={cmd.id}
+                role="option"
+                aria-selected={i === selectedIndex}
+                className={[
+                  'aap-cmd-palette__item',
+                  i === selectedIndex && 'aap-cmd-palette__item--selected',
+                  isActive && 'aap-cmd-palette__item--active',
+                ].filter(Boolean).join(' ')}
+                onClick={() => execute(cmd)}
+                onMouseEnter={() => setSelectedIndex(i)}
+              >
+                <span className="aap-cmd-palette__item-category">
+                  {cmd.category === 'navigate' ? 'Go to' : 'Run'}
+                </span>
+                <span className="aap-cmd-palette__item-label">{cmd.label}</span>
+                {isActive && <span className="aap-cmd-palette__item-badge">Current</span>}
+                {cmd.shortcut && <kbd className="aap-cmd-palette__kbd">{cmd.shortcut}</kbd>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

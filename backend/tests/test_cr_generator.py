@@ -140,12 +140,14 @@ class TestGenerateCR:
         assert cr["spec"]["hub"]["storage_type"] == "s3"
 
     def test_generate_cr_hub_storage_backend_default(self, sample_config):
-        """Test hub storage backend not in spec when file (default)."""
+        """Test hub uses file_storage_storage_class when storage_class is set."""
         sample_config["ocp"]["hub_storage_backend"] = "file"
         sample_config["ocp"]["hub_replicas"] = 1
         cr = generate_cr(sample_config)
 
-        assert "hub" not in cr["spec"]
+        # When a storage_class is configured, hub should get file_storage_storage_class
+        assert cr["spec"]["hub"]["file_storage_storage_class"] == "gp3"
+        assert "storage_type" not in cr["spec"]["hub"]
 
     def test_generate_cr_hub_storage_size(self, sample_config):
         """Test hub storage size."""

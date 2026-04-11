@@ -2,6 +2,7 @@ import os
 import json
 import time
 import asyncio
+import httpx
 from dataclasses import asdict
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -1105,6 +1106,12 @@ class OCPConnectRequest(BaseModel):
     token: str
 
 
+class OCPLoginRequest(BaseModel):
+    api_url: str
+    username: str
+    password: str
+
+
 class OCPOperatorInstallRequest(BaseModel):
     api_url: str
     token: str
@@ -1118,6 +1125,73 @@ class OCPCRGenerateRequest(BaseModel):
 
 class OCPDeployStartRequest(BaseModel):
     config: dict
+
+
+@app.post("/api/ocp/login")
+async def ocp_login(req: OCPLoginRequest):
+    """Authenticate to OpenShift with username/password and return a bearer token.
+
+    Performs the same OAuth implicit grant flow that ``oc login`` uses so
+    the user never needs to install or run the ``oc`` CLI.
+    """
+    import base64 as _b64
+
+    api_url = req.api_url.rstrip("/")
+
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=15.0, follow_redirects=False) as client:
+            # 1. Discover the OAuth authorization endpoint
+            well_known = await client.get(f"{api_url}/.well-known/oauth-authorization-server")
+            if well_known.status_code != 200:
+                raise HTTPException(502, "Could not discover cluster OAuth server. Is the API URL correct?")
+
+            authorize_url = well_known.json().get("authorization_endpoint", "")
+            if not authorize_url:
+                raise HTTPException(502, "Cluster did not advertise an authorization endpoint")
+
+            # 2. Request an implicit token with Basic auth
+            creds = _b64.b64encode(f"{req.username}:{req.password}".encode()).decode()
+            resp = await client.get(
+                f"{authorize_url}?response_type=token&client_id=openshift-challenging-client",
+                headers={"Authorization": f"Basic {creds}", "X-CSRF-Token": "1"},
+            )
+
+            if resp.status_code == 401:
+                raise HTTPException(401, "Invalid username or password")
+
+            if resp.status_code not in (301, 302):
+                raise HTTPException(502, f"Unexpected response from OAuth server ({resp.status_code})")
+
+            location = resp.headers.get("location", "")
+            if "#" not in location:
+                raise HTTPException(502, "OAuth server did not return a token fragment")
+
+            fragment = location.split("#", 1)[1]
+            params = dict(p.split("=", 1) for p in fragment.split("&") if "=" in p)
+            token = params.get("access_token")
+            if not token:
+                raise HTTPException(502, "OAuth response missing access_token")
+
+            # 3. Verify the token and get the authenticated user
+            user_resp = await client.get(
+                f"{api_url}/apis/user.openshift.io/v1/users/~",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            username = req.username
+            if user_resp.status_code == 200:
+                username = user_resp.json().get("metadata", {}).get("name", req.username)
+
+            print(f"OCP login succeeded for user {username}")
+            return {"token": token, "username": username}
+
+    except HTTPException:
+        raise
+    except httpx.ConnectError:
+        raise HTTPException(502, "Could not reach the cluster API. Check the URL and your network.")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Connection to cluster timed out")
+    except Exception as exc:
+        raise HTTPException(500, f"Login failed: {exc}")
 
 
 @app.post("/api/ocp/connect")
@@ -1176,37 +1250,44 @@ async def ocp_get_operators(body: dict):
 
 @app.post("/api/ocp/operator/install")
 async def ocp_install_operator(req: OCPOperatorInstallRequest):
-    """Install AAP operator via Subscription."""
+    """Install AAP operator via Subscription.
+
+    The AAP operator does NOT support AllNamespaces install mode, so it
+    must be installed in its own namespace with a scoped OperatorGroup
+    rather than in ``openshift-operators``.
+    """
+    operator_ns = req.namespace  # Install into the target namespace (e.g. "aap")
     try:
         client = OCPClient(api_url=req.api_url, token=req.token)
         try:
             # Ensure namespace exists
-            await client.create_namespace(req.namespace)
+            await client.create_namespace(operator_ns)
 
-            # Create OperatorGroup (required for namespaced operators)
+            # Create a scoped OperatorGroup — required because AAP operator
+            # only supports OwnNamespace / SingleNamespace install modes
             operator_group = {
                 "apiVersion": "operators.coreos.com/v1",
                 "kind": "OperatorGroup",
                 "metadata": {
                     "name": "aap-operator-group",
-                    "namespace": req.namespace,
+                    "namespace": operator_ns,
                 },
                 "spec": {
-                    "targetNamespaces": [req.namespace],
+                    "targetNamespaces": [operator_ns],
                 },
             }
             try:
-                await client.apply_resource(req.namespace, operator_group)
+                await client.apply_resource(operator_ns, operator_group)
             except Exception:
                 pass  # may already exist
 
-            # Create subscription
+            # Create Subscription
             subscription = {
                 "apiVersion": "operators.coreos.com/v1alpha1",
                 "kind": "Subscription",
                 "metadata": {
                     "name": "ansible-automation-platform-operator",
-                    "namespace": req.namespace,
+                    "namespace": operator_ns,
                 },
                 "spec": {
                     "channel": req.channel,
@@ -1217,11 +1298,11 @@ async def ocp_install_operator(req: OCPOperatorInstallRequest):
                 },
             }
 
-            result = await client.apply_resource(req.namespace, subscription)
+            result = await client.apply_resource(operator_ns, subscription)
             audit_service.log(
                 action="ocp_operator_install",
                 category="deploy",
-                details=f"Started AAP operator installation in {req.namespace}",
+                details=f"Started AAP operator installation in {operator_ns}",
             )
             return {"status": "started", "subscription": result}
         finally:
@@ -1247,11 +1328,13 @@ async def ocp_operator_status(body: dict):
                 name = item.get("metadata", {}).get("name", "")
                 if "ansible-automation-platform" in name.lower() or "aap-operator" in name.lower():
                     phase = item.get("status", {}).get("phase", "")
+                    version = item.get("spec", {}).get("version", "")
                     return {
                         "installed": True,
                         "ready": phase == "Succeeded",
                         "phase": phase,
                         "name": name,
+                        "version": version,
                     }
 
             return {"installed": False, "ready": False}

@@ -69,8 +69,13 @@ class OCPDeployer:
 
     @property
     def operator_namespace(self) -> str:
-        """Get the operator installation namespace."""
-        return self.config.get("operator_namespace", "openshift-operators")
+        """Get the operator installation namespace.
+
+        AAP operator does NOT support AllNamespaces install mode, so it
+        must be installed in the same namespace as the CR with a scoped
+        OperatorGroup.
+        """
+        return self.config.get("operator_namespace", self.namespace)
 
     async def cancel(self):
         """Cancel the deployment."""

@@ -61,13 +61,11 @@ export function WelcomeStep({ config, updateConfig, onNext, onViewPastDeploy }: 
               </div>
               <div className="aap-selection-card__title">Containerized</div>
               <div className="aap-selection-card__subtitle">RHEL + Podman</div>
-              {selected === 'containerized' && (
-                <ul className="aap-selection-card__requirements">
-                  <li><CheckCircleIcon aria-hidden="true" /> RHEL 9.4+, 16 GB RAM, 4 CPUs</li>
-                  <li><CheckCircleIcon aria-hidden="true" /> SSH access with sudo privileges</li>
-                  <li><CheckCircleIcon aria-hidden="true" /> Red Hat registry credentials</li>
-                </ul>
-              )}
+              <ul className="aap-selection-card__requirements">
+                <li><CheckCircleIcon aria-hidden="true" /> RHEL 9.4+, 16 GB RAM, 4 CPUs</li>
+                <li><CheckCircleIcon aria-hidden="true" /> SSH access with sudo privileges</li>
+                <li><CheckCircleIcon aria-hidden="true" /> Red Hat registry credentials</li>
+              </ul>
             </label>
 
             <label
@@ -89,13 +87,11 @@ export function WelcomeStep({ config, updateConfig, onNext, onViewPastDeploy }: 
               </div>
               <div className="aap-selection-card__title">OpenShift</div>
               <div className="aap-selection-card__subtitle">Operator-managed</div>
-              {selected === 'openshift' && (
-                <ul className="aap-selection-card__requirements">
-                  <li><CheckCircleIcon aria-hidden="true" /> OpenShift 4.14+ with cluster-admin</li>
-                  <li><CheckCircleIcon aria-hidden="true" /> AAP Operator in OperatorHub</li>
-                  <li><CheckCircleIcon aria-hidden="true" /> Bearer token for API access</li>
-                </ul>
-              )}
+              <ul className="aap-selection-card__requirements">
+                <li><CheckCircleIcon aria-hidden="true" /> OpenShift 4.14+ with cluster-admin</li>
+                <li><CheckCircleIcon aria-hidden="true" /> AAP Operator in OperatorHub</li>
+                <li><CheckCircleIcon aria-hidden="true" /> Bearer token for API access</li>
+              </ul>
             </label>
           </div>
         </fieldset>

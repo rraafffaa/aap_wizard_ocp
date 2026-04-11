@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircleIcon, ExclamationCircleIcon, SyncAltIcon, InProgressIcon } from '@patternfly/react-icons';
 import type { DeploymentConfig } from '../types';
-import { getStoredToken } from '../api';
+import { getStoredToken, BASE } from '../api';
 import { StatusFeed } from '../components/StatusFeed';
 import { useOperationStatus } from '../hooks/useOperationStatus';
 
@@ -37,7 +37,7 @@ export function OperatorStep({ config, updateConfig }: Props) {
   const checkOperatorStatus = async () => {
     setStatus('checking');
     try {
-      const res = await fetch('/api/ocp/operator/status', {
+      const res = await fetch(`${BASE}/api/ocp/operator/status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export function OperatorStep({ config, updateConfig }: Props) {
     startStep('subscription');
     pollCountRef.current = 0;
     try {
-      const res = await fetch('/api/ocp/operator/install', {
+      const res = await fetch(`${BASE}/api/ocp/operator/install`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export function OperatorStep({ config, updateConfig }: Props) {
             startStep('csv');
           }
           try {
-            const pollRes = await fetch('/api/ocp/operator/status', {
+            const pollRes = await fetch(`${BASE}/api/ocp/operator/status`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

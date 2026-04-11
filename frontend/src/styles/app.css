@@ -124,6 +124,126 @@
 }
 
 /* --------------------------------------------------------------------------
+   Dark Mode — 5-level surface elevation system
+   Activated by data-theme="dark" on <html> or via OS preference
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  /* Surfaces — elevation-based hierarchy */
+  --aap-surface-base: #1a1a1e;
+  --aap-surface-raised: #111114;
+  --aap-surface-overlay: #232328;
+  --aap-surface-sunken: #0a0a0d;
+  --aap-surface-card: #16161a;
+  --aap-surface-card-hover: #1e1e23;
+  --aap-surface-input: #111114;
+  --aap-surface-hover: #2c2c33;
+  --aap-surface-secondary: #1e1e23;
+
+  /* Borders */
+  --aap-border-default: rgba(255, 255, 255, 0.1);
+  --aap-border-subtle: rgba(255, 255, 255, 0.06);
+  --aap-border-strong: rgba(255, 255, 255, 0.16);
+  --aap-border-focus: #4d9fe0;
+
+  /* Text */
+  --aap-text-primary: rgba(255, 255, 255, 0.92);
+  --aap-text-secondary: rgba(255, 255, 255, 0.6);
+  --aap-text-muted: rgba(255, 255, 255, 0.4);
+  --aap-text-on-blue: #ffffff;
+  --aap-text-on-red: #ffffff;
+  --aap-text-link: #4d9fe0;
+  --aap-text-link-hover: #73b4e8;
+
+  /* Brand — brighter on dark */
+  --aap-blue: #4d9fe0;
+  --aap-blue-hover: #73b4e8;
+  --aap-blue-active: #3a8ed0;
+  --aap-blue-subtle: rgba(77, 159, 224, 0.12);
+  --aap-red: #ff4d4d;
+  --aap-red-hover: #ff6666;
+  --aap-red-active: #ff3333;
+  --aap-red-subtle: rgba(255, 77, 77, 0.1);
+
+  /* Status — brighter for dark backgrounds */
+  --aap-success: #4ade80;
+  --aap-success-bg: rgba(74, 222, 128, 0.1);
+  --aap-warning: #fbbf24;
+  --aap-warning-bg: rgba(251, 191, 36, 0.1);
+  --aap-danger: #f87171;
+  --aap-danger-bg: rgba(248, 113, 113, 0.1);
+  --aap-info: #60a5fa;
+  --aap-info-bg: rgba(96, 165, 250, 0.1);
+
+  /* Shadows — darker, more diffuse */
+  --aap-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --aap-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --aap-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Overlay */
+  --aap-overlay-bg: rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
+}
+
+/* Auto dark mode via OS preference (when no explicit data-theme) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --aap-surface-base: #1a1a1e;
+    --aap-surface-raised: #111114;
+    --aap-surface-overlay: #232328;
+    --aap-surface-sunken: #0a0a0d;
+    --aap-surface-card: #16161a;
+    --aap-surface-card-hover: #1e1e23;
+    --aap-surface-input: #111114;
+    --aap-surface-hover: #2c2c33;
+    --aap-surface-secondary: #1e1e23;
+    --aap-border-default: rgba(255, 255, 255, 0.1);
+    --aap-border-subtle: rgba(255, 255, 255, 0.06);
+    --aap-border-strong: rgba(255, 255, 255, 0.16);
+    --aap-border-focus: #4d9fe0;
+    --aap-text-primary: rgba(255, 255, 255, 0.92);
+    --aap-text-secondary: rgba(255, 255, 255, 0.6);
+    --aap-text-muted: rgba(255, 255, 255, 0.4);
+    --aap-text-on-blue: #ffffff;
+    --aap-text-on-red: #ffffff;
+    --aap-text-link: #4d9fe0;
+    --aap-text-link-hover: #73b4e8;
+    --aap-blue: #4d9fe0;
+    --aap-blue-hover: #73b4e8;
+    --aap-blue-active: #3a8ed0;
+    --aap-blue-subtle: rgba(77, 159, 224, 0.12);
+    --aap-red: #ff4d4d;
+    --aap-red-hover: #ff6666;
+    --aap-red-active: #ff3333;
+    --aap-red-subtle: rgba(255, 77, 77, 0.1);
+    --aap-success: #4ade80;
+    --aap-success-bg: rgba(74, 222, 128, 0.1);
+    --aap-warning: #fbbf24;
+    --aap-warning-bg: rgba(251, 191, 36, 0.1);
+    --aap-danger: #f87171;
+    --aap-danger-bg: rgba(248, 113, 113, 0.1);
+    --aap-info: #60a5fa;
+    --aap-info-bg: rgba(96, 165, 250, 0.1);
+    --aap-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --aap-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --aap-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --aap-overlay-bg: rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+}
+
+/* Dark mode skeleton shimmer uses subtler highlight */
+[data-theme="dark"] .aap-skeleton::after,
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .aap-skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+} }
+
+/* Dark mode noise overlay inverts */
+[data-theme="dark"] .aap-content::before {
+  filter: invert(1);
+}
+
+/* --------------------------------------------------------------------------
    PF6 light theme alignment
    -------------------------------------------------------------------------- */
 
@@ -225,6 +345,17 @@ a:hover {
   align-items: center;
   gap: var(--aap-space-xs);
   -webkit-app-region: no-drag;
+}
+
+.aap-header__kbd {
+  font-size: var(--aap-font-xs);
+  font-family: var(--aap-font-mono);
+  padding: 2px 8px;
+  border-radius: var(--aap-radius-sm);
+  background: var(--aap-surface-base);
+  border: 1px solid var(--aap-border-subtle);
+  color: var(--aap-text-muted);
+  line-height: 1.2;
 }
 
 .aap-header__version {
@@ -367,21 +498,7 @@ a:hover {
   margin: 0 auto;
 }
 
-/* Step entry animation */
-.aap-step-enter {
-  animation: stepSlideIn 300ms ease-out forwards;
-}
-
-@keyframes stepSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Step transitions handled by framer-motion in App.tsx */
 
 /* ---------- Footer ---------- */
 /* PF6 Wizard footer: Back + Cancel left, Next right */
@@ -2740,9 +2857,326 @@ a:hover {
   animation: toastSlideIn 300ms ease-out;
 }
 
+/* ==========================================================================
+   Skeleton Shimmer Loading
+   CSS-only loading placeholder for async operations
+   ========================================================================== */
+.aap-skeleton {
+  background: var(--aap-surface-base);
+  border-radius: var(--aap-radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.aap-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: aap-shimmer 1.5s infinite;
+}
+
+@keyframes aap-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.aap-skeleton--text {
+  height: 14px;
+  width: 80%;
+  margin-bottom: 8px;
+}
+
+.aap-skeleton--text-short {
+  height: 14px;
+  width: 40%;
+  margin-bottom: 8px;
+}
+
+.aap-skeleton--heading {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.aap-skeleton--block {
+  height: 80px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.aap-skeleton--circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+/* ==========================================================================
+   Segmented Progress Bar
+   Stripe-style multi-segment progress indicator
+   ========================================================================== */
+.aap-progress-segments {
+  display: flex;
+  gap: 3px;
+  padding: 0 var(--aap-space-lg);
+  margin-bottom: var(--aap-space-sm);
+}
+
+.aap-progress-segment {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--aap-border-subtle);
+  overflow: hidden;
+  transition: background 0.4s ease;
+}
+
+.aap-progress-segment--completed {
+  background: var(--aap-success);
+}
+
+.aap-progress-segment--active {
+  background: var(--aap-border-subtle);
+  position: relative;
+}
+
+.aap-progress-segment--active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--aap-blue), var(--aap-success));
+  border-radius: 2px;
+  animation: aap-progress-pulse 2s ease-in-out infinite;
+  transform-origin: left;
+}
+
+@keyframes aap-progress-pulse {
+  0% { transform: scaleX(0); opacity: 1; }
+  50% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0.4; }
+}
+
+/* ==========================================================================
+   Glow Effects
+   Subtle glow on interactive elements and status indicators
+   ========================================================================== */
+.aap-btn--primary {
+  position: relative;
+}
+
+.aap-btn--primary::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--aap-radius-sm) + 2px);
+  background: var(--aap-blue);
+  filter: blur(10px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.aap-btn--primary:hover::before {
+  opacity: 0.3;
+}
+
+.aap-btn--primary:active::before {
+  opacity: 0.15;
+}
+
+.aap-badge--success {
+  box-shadow: 0 0 8px rgba(62, 134, 53, 0.2);
+}
+
+.aap-badge--danger {
+  box-shadow: 0 0 8px rgba(201, 25, 11, 0.2);
+}
+
+.aap-badge--info {
+  box-shadow: 0 0 8px rgba(0, 102, 204, 0.2);
+}
+
+/* ==========================================================================
+   Noise Texture Overlay
+   Subtle grain texture for depth (Linear/Raycast pattern)
+   ========================================================================== */
+.aap-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aap-content {
+  position: relative;
+}
+
+/* ==========================================================================
+   Command Palette (Cmd+K)
+   Glassmorphism overlay with fuzzy search — Linear/Raycast pattern
+   ========================================================================== */
+.aap-cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--aap-overlay-bg);
+  backdrop-filter: blur(4px);
+  z-index: var(--aap-z-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+}
+
+.aap-cmd-palette {
+  width: 520px;
+  max-height: 400px;
+  background: var(--aap-surface-overlay);
+  border: 1px solid var(--aap-border-default);
+  border-radius: var(--aap-radius-xl);
+  box-shadow: var(--aap-shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.aap-cmd-palette__input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--aap-space-sm);
+  padding: var(--aap-space-sm) var(--aap-space-md);
+  border-bottom: 1px solid var(--aap-border-subtle);
+}
+
+.aap-cmd-palette__search-icon {
+  color: var(--aap-text-muted);
+  flex-shrink: 0;
+}
+
+.aap-cmd-palette__input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: var(--aap-font-base);
+  color: var(--aap-text-primary);
+  outline: none;
+  font-family: var(--aap-font-family-text);
+}
+
+.aap-cmd-palette__input::placeholder {
+  color: var(--aap-text-muted);
+}
+
+.aap-cmd-palette__kbd {
+  font-size: var(--aap-font-xs);
+  font-family: var(--aap-font-mono);
+  padding: 2px 6px;
+  border-radius: var(--aap-radius-sm);
+  background: var(--aap-surface-base);
+  border: 1px solid var(--aap-border-subtle);
+  color: var(--aap-text-muted);
+  line-height: 1;
+}
+
+.aap-cmd-palette__list {
+  overflow-y: auto;
+  max-height: 320px;
+  padding: var(--aap-space-xs) 0;
+}
+
+.aap-cmd-palette__item {
+  display: flex;
+  align-items: center;
+  gap: var(--aap-space-sm);
+  padding: var(--aap-space-sm) var(--aap-space-md);
+  cursor: pointer;
+  font-size: var(--aap-font-base);
+  color: var(--aap-text-secondary);
+  transition: background var(--aap-transition-fast);
+}
+
+.aap-cmd-palette__item--selected {
+  background: var(--aap-surface-hover);
+  color: var(--aap-text-primary);
+}
+
+.aap-cmd-palette__item--active .aap-cmd-palette__item-label {
+  color: var(--aap-blue);
+}
+
+.aap-cmd-palette__item-category {
+  font-size: var(--aap-font-xs);
+  color: var(--aap-text-muted);
+  min-width: 36px;
+}
+
+.aap-cmd-palette__item-label {
+  flex: 1;
+  color: var(--aap-text-primary);
+}
+
+.aap-cmd-palette__item-badge {
+  font-size: var(--aap-font-xs);
+  color: var(--aap-blue);
+  padding: 1px 6px;
+  border-radius: var(--aap-radius-lg);
+  background: var(--aap-blue-subtle);
+}
+
+.aap-cmd-palette__empty {
+  padding: var(--aap-space-lg);
+  text-align: center;
+  color: var(--aap-text-muted);
+  font-size: var(--aap-font-sm);
+}
+
+/* ==========================================================================
+   3D Card Tilt Effect
+   Perspective transforms on hover for topology selection cards
+   ========================================================================== */
+.aap-tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease;
+}
+
+.aap-tilt-card:hover {
+  transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale3d(1.02, 1.02, 1.02);
+}
+
+/* ==========================================================================
+   Typewriter / Streaming Text Effect
+   ========================================================================== */
+.aap-typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: aap-blink 1s step-end infinite;
+}
+
+@keyframes aap-blink {
+  50% { opacity: 0; }
+}
+
+/* ==========================================================================
+   Magnetic Button Effect (Deploy CTA only)
+   ========================================================================== */
+.aap-btn--magnetic {
+  transition: transform 0.15s ease;
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .aap-step-enter,
   .aap-welcome__logo,
   .aap-welcome__subheading,
   .aap-welcome__tagline,
@@ -2751,8 +3185,15 @@ a:hover {
   .aap-selection-card__requirements,
   .aap-toast,
   .aap-check-draw path,
-  .aap-progress__bar--shimmer {
+  .aap-progress__bar--shimmer,
+  .aap-skeleton::after,
+  .aap-progress-segment--active::after,
+  .aap-typewriter-cursor {
     animation: none !important;
+  }
+
+  .aap-content::before {
+    display: none;
   }
 
   .aap-selection-card,

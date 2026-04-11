@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { Toaster, toast as sonnerToast } from 'sonner';
 import {
-  CheckCircleIcon,
   SaveIcon,
   CheckIcon,
-  InfoCircleIcon,
-  ExclamationCircleIcon,
   CogIcon,
 } from '@patternfly/react-icons';
 import {
@@ -33,9 +32,16 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProfileManager } from './components/ProfileManager';
 import { ConfirmModal } from './components/ConfirmModal';
 import { SettingsModal } from './components/SettingsModal';
+import { CommandPalette } from './components/CommandPalette';
 import { setAuthToken, getStoredToken, isTokenExpired } from './api';
 
 type ToastType = 'info' | 'error' | 'success';
+
+function showToast(message: string, type: ToastType = 'info') {
+  if (type === 'success') sonnerToast.success(message);
+  else if (type === 'error') sonnerToast.error(message);
+  else sonnerToast.info(message);
+}
 
 function WizardApp() {
   // Auto-authenticate on startup (Electron desktop app — no login needed)
@@ -65,10 +71,11 @@ function AuthenticatedWizard() {
   const [completedSteps, setCompletedSteps] = useState<Set<WizardStep>>(new Set());
   const [deploySessionId, setDeploySessionId] = useState('');
   const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [viewingPastDeploy, setViewingPastDeploy] = useState<DeploymentRecord | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
+  const [stepDirection, setStepDirection] = useState(1); // 1 = forward, -1 = back
   const savedState = useRef(loadSavedConfig());
   const stepKey = useRef(0);
 
@@ -82,12 +89,17 @@ function AuthenticatedWizard() {
     }
   }, [config, currentStep]);
 
+  // Cmd+K command palette shortcut
   useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const wizardSteps = getWizardSteps(config.platform);
   const stepSections = getStepSections(config.platform);
@@ -110,6 +122,7 @@ function AuthenticatedWizard() {
     }
     const nextIndex = currentIndex + 1;
     if (nextIndex < wizardSteps.length) {
+      setStepDirection(1);
       stepKey.current++;
       setCurrentStep(wizardSteps[nextIndex].id);
       scrollContentToTop();
@@ -119,6 +132,7 @@ function AuthenticatedWizard() {
   const goBack = useCallback(() => {
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0) {
+      setStepDirection(-1);
       stepKey.current++;
       setCurrentStep(wizardSteps[prevIndex].id);
       scrollContentToTop();
@@ -129,6 +143,7 @@ function AuthenticatedWizard() {
     (step: WizardStep) => {
       const stepIndex = wizardSteps.findIndex((s) => s.id === step);
       if (stepIndex <= currentIndex || completedSteps.has(step) || stepIndex === currentIndex + 1) {
+        setStepDirection(stepIndex > currentIndex ? 1 : -1);
         stepKey.current++;
         setCurrentStep(step);
         scrollContentToTop();
@@ -148,7 +163,7 @@ function AuthenticatedWizard() {
       setCompletedSteps(completed);
       stepKey.current++;
       setCurrentStep(savedState.current.step);
-      setToast({ message: 'Session restored successfully', type: 'success' });
+      showToast('Session restored successfully', 'success');
     }
     setShowResumePrompt(false);
   };
@@ -175,7 +190,7 @@ function AuthenticatedWizard() {
     stepKey.current++;
     setCurrentStep('welcome');
     setCompletedSteps(new Set());
-    setToast({ message: 'Deployment record deleted', type: 'info' });
+    showToast('Deployment record deleted', 'info');
   }, []);
 
   const isDeploying = currentStep === 'deploy';
@@ -231,6 +246,7 @@ function AuthenticatedWizard() {
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="aap-wizard">
       {showResumePrompt && (
         <div className="aap-overlay" role="dialog" aria-modal="true" aria-labelledby="resume-title">
@@ -255,19 +271,7 @@ function AuthenticatedWizard() {
         </div>
       )}
 
-      {toast && (
-        <div
-          className={`aap-toast aap-toast--${toast.type}`}
-          role="status"
-          aria-live="polite"
-          onClick={() => setToast(null)}
-        >
-          {toast.type === 'success' && <CheckCircleIcon />}
-          {toast.type === 'error' && <ExclamationCircleIcon />}
-          {toast.type === 'info' && <InfoCircleIcon />}
-          {toast.message}
-        </div>
-      )}
+      <Toaster position="bottom-right" richColors closeButton duration={4000} />
 
       <header className="aap-header">
         <div className="aap-header__brand">
@@ -285,8 +289,16 @@ function AuthenticatedWizard() {
               stepKey.current++;
               setCurrentStep('platform');
             }}
-            onToast={(message, type) => setToast({ message, type })}
+            onToast={(message, type) => showToast(message, type)}
           />
+          <button
+            className="aap-btn aap-btn--tertiary aap-btn--sm"
+            onClick={() => setCmdPaletteOpen(true)}
+            aria-label="Open command palette"
+            title="Search steps and actions (⌘K)"
+          >
+            <kbd className="aap-header__kbd">⌘K</kbd>
+          </button>
           <button
             className="aap-btn aap-btn--tertiary aap-btn--sm"
             onClick={() => setSettingsOpen(true)}
@@ -298,6 +310,22 @@ function AuthenticatedWizard() {
           <span className="aap-header__version">v2.6</span>
         </div>
       </header>
+
+      {/* Segmented progress bar — hidden on welcome/complete */}
+      {currentStep !== 'welcome' && currentStep !== 'complete' && (
+        <div className="aap-progress-segments" role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={wizardSteps.length}>
+          {wizardSteps.map((step, i) => (
+            <div
+              key={step.id}
+              className={[
+                'aap-progress-segment',
+                i < currentIndex && 'aap-progress-segment--completed',
+                i === currentIndex && 'aap-progress-segment--active',
+              ].filter(Boolean).join(' ')}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="aap-body">
         <nav className="aap-sidebar" aria-label="Wizard steps">
@@ -340,9 +368,28 @@ function AuthenticatedWizard() {
 
         <main className="aap-content" aria-label="Step content">
           <div className="aap-content__inner">
-            <div className="aap-step-enter" key={stepKey.current}>
-              {renderStep()}
-            </div>
+            <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
+              <motion.div
+                key={stepKey.current}
+                custom={stepDirection}
+                variants={{
+                  enter: (dir: number) => ({ opacity: 0, x: dir * 40 }),
+                  center: { opacity: 1, x: 0 },
+                  exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  type: 'spring',
+                  stiffness: 500,
+                  damping: 35,
+                  mass: 0.5,
+                }}
+              >
+                {renderStep()}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>
@@ -378,7 +425,7 @@ function AuthenticatedWizard() {
       <ConfirmModal
         isOpen={showCancelConfirm}
         title="Cancel wizard?"
-        message="Any unsaved changes will be lost. You can resume from a saved session later."
+        message="This will reset all configuration to defaults. Your current progress will be cleared."
         confirmLabel="Yes, cancel"
         variant="warning"
         onConfirm={() => {
@@ -392,7 +439,18 @@ function AuthenticatedWizard() {
         onCancel={() => setShowCancelConfirm(false)}
       />
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <CommandPalette
+        isOpen={cmdPaletteOpen}
+        onClose={() => setCmdPaletteOpen(false)}
+        onNavigate={(step) => goToStep(step)}
+        onAction={(action) => {
+          if (action === 'settings') setSettingsOpen(true);
+        }}
+        currentStep={currentStep}
+        platform={config.platform}
+      />
     </div>
+    </MotionConfig>
   );
 }
 

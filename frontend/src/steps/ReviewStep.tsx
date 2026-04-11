@@ -36,7 +36,7 @@ export function ReviewStep({ config, updateConfig }: Props) {
       })
       .catch(() => {
         if (!cancelled) {
-          setInventoryPreview('# Inventory preview unavailable — backend not running\n# You can still export the configuration as JSON using the Export button.');
+          setInventoryPreview('# Inventory preview unavailable\n# You can still export the configuration as JSON using the Export button.');
           setApiAvailable(false);
         }
       });

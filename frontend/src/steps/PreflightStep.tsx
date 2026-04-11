@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import type { DeploymentConfig, PreflightCheck, PreflightResult } from '../types';
 import { runPreflight, prepareHost, prepareHostStream, type PrepareResult, type PrepareStreamEvent } from '../api';
-import { getStoredToken } from '../api';
+import { getStoredToken, BASE } from '../api';
 import {
   CheckIcon,
   TimesIcon,
@@ -76,7 +76,7 @@ function OCPPreflightStep({ config }: { config: DeploymentConfig }) {
     setError('');
     setResult(null);
     try {
-      const res = await fetch('/api/ocp/preflight', {
+      const res = await fetch(`${BASE}/api/ocp/preflight`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -233,7 +233,7 @@ function ContainerizedPreflightStep({ config, updateConfig }: Props) {
       const res = await runPreflight(config.hosts, config.topology, config.installation_type, targetInfo);
       setResult(res);
     } catch (err: unknown) {
-      setError((err as Error).message || 'Failed to run pre-flight checks. Is the backend running?');
+      setError((err as Error).message || 'Failed to run pre-flight checks. Please check your connection.');
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,7 @@ import type {
 
 // When running in Electron (file:// protocol), point to the local backend server.
 // In browser/dev mode, use relative URLs (proxied by Vite or same-origin).
-const BASE = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
+export const BASE = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
 const REQUEST_TIMEOUT = 30_000;
 
 // ---------------------------------------------------------------------------
@@ -207,11 +207,11 @@ async function request<T>(path: string, options?: RequestInit, timeoutMs?: numbe
     return await res.json();
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('Request timed out — is the backend running on port 8000?');
+      throw new Error('Request timed out — the service may be starting up. Please try again.');
     }
     if (err instanceof ApiError) throw err;
     throw new Error(
-      `Network error: ${err instanceof Error ? err.message : 'Unknown'}. Is the backend running?`
+      `Network error: ${err instanceof Error ? err.message : 'Unknown'}. Please check your connection.`
     );
   } finally {
     clearTimeout(timer);

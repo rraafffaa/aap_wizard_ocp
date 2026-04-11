@@ -1,8 +1,14 @@
-# Claude Code Guidance — AAP Deployment Wizard
+# Claude Code Guidance — AAP Deployment Wizard (OCP)
 
 ## What This Project Is
 
-A native **Electron desktop app** (not a browser app) that guides users through deploying Red Hat Ansible Automation Platform 2.6 on a RHEL 9 VM. It replaces manual inventory file editing with a 15-step PatternFly wizard UI.
+A native **Electron desktop app** (not a browser app) that guides users through deploying Red Hat Ansible Automation Platform 2.6 on **OpenShift Container Platform**. Forked from the original containerized wizard (which targets RHEL 9 VMs), this variant deploys AAP via the AAP Operator and Custom Resources instead of SSH + ansible-playbook.
+
+## Who This Is For
+
+- **Primary users:** Red Hat customers and SAs deploying AAP on OpenShift
+- **Internal stakeholders:** Cloud Services team, SRE, Product Management
+- **Goal:** Eliminate the complexity of manually configuring AAP Operator CRs, subscriptions, and namespace setup
 
 ## Architecture
 
@@ -12,16 +18,25 @@ Electron (main.cjs)
   └── Loads React + PatternFly frontend (Vite dev server or built dist/)
 
 Frontend (React 18 + PatternFly 6)
-  └── 15 wizard steps in frontend/src/steps/
+  └── 21 wizard steps in frontend/src/steps/
 
 Backend (Python FastAPI)
-  ├── app/main.py          — API routes
-  ├── app/deployer.py      — SSH-based deployment engine (key file)
-  ├── app/inventory.py     — INI inventory file generator
-  ├── app/preflight.py     — Pre-flight system checks
-  ├── app/auth.py          — JWT authentication
-  └── app/services/        — SSH, ports, AI debugger, audit
+  ├── app/main.py            — API routes
+  ├── app/deployer.py        — SSH-based deployment engine (from original wizard)
+  ├── app/ocp_deployer.py    — OCP deployment engine (operator-based)
+  ├── app/ocp_client.py      — OpenShift API client
+  ├── app/ocp_preflight.py   — OCP-specific pre-flight checks
+  ├── app/cr_generator.py    — Custom Resource YAML generator
+  ├── app/inventory.py       — INI inventory file generator
+  ├── app/preflight.py       — Pre-flight system checks
+  ├── app/auth.py            — JWT authentication
+  └── app/services/          — SSH, AI debugger, audit, backup, health, certs, etc.
 ```
+
+### OCP-Specific Components
+- **OCP wizard steps:** ClusterStep, NamespaceStep, OperatorStep, SubscriptionStep, ReplicasStep, TopologyStep, OnboardingStep
+- **Shared with original wizard:** Auth, Electron shell, many UI components, AI debugger, audit service
+- **Original wizard repo:** `~/aap_wizard/` (containerized RHEL 9 target)
 
 ## How to Run
 
@@ -87,6 +102,14 @@ Passwords with special characters (`#`, `=`, `;`, `'`, spaces) must be properly 
 - The installer timeout is set to 7200s (2 hours) for large deployments
 - Hub image push may 502 for large images (non-critical)
 
+## Security Rules
+
+- **Never** hardcode credentials, IPs, tokens, or passwords in code, docs, or memory files
+- All secrets via env vars (see `.env.example` for reference)
+- Frontend auth uses sessionStorage for JWT tokens — never localStorage
+- Passwords stripped from any client-side storage
+- WebSocket connections require JWT auth
+
 ## Code Style & Conventions
 
 - **Frontend**: TypeScript, React functional components, PatternFly 6 components
@@ -94,6 +117,7 @@ Passwords with special characters (`#`, `=`, `;`, `'`, spaces) must be properly 
 - **Tests**: pytest (backend), vitest (frontend)
 - **No auto-commit**: Always ask before committing
 - **Passwords/secrets**: Never log or store in plaintext; use env vars or sessionStorage
+- **Spec-kit**: Use spec-driven development workflow for new features (skills in `.claude/skills/`)
 
 ## File Organization
 

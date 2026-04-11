@@ -231,7 +231,7 @@ export function DeployStep({ config, updateConfig, sessionId, setSessionId, onCo
       setSessionId(sid);
     } catch (err: any) {
       setStatus('failed');
-      setError(err.message || 'Failed to start deployment — is the backend running on port 8000?');
+      setError(err.message || 'Failed to start deployment. Please check your connection and try again.');
       return;
     }
 
@@ -346,7 +346,7 @@ export function DeployStep({ config, updateConfig, sessionId, setSessionId, onCo
       downloadTextFile(data.inventory, `aap-inventory-${sessionId || 'config'}.ini`);
     } catch {
       downloadTextFile(
-        '# Inventory generation requires the backend to be running.\n# Export the config JSON from the header instead.',
+        '# Inventory generation unavailable.\n# Export the config JSON from the header instead.',
         'aap-inventory-unavailable.ini',
       );
     }
@@ -389,7 +389,7 @@ export function DeployStep({ config, updateConfig, sessionId, setSessionId, onCo
         const data = await generateCRYaml(config);
         sections.push(data.yaml);
       } catch {
-        sections.push('# CR generation unavailable — backend not running');
+        sections.push('# CR generation unavailable');
       }
       sections.push('');
     } else {
@@ -401,7 +401,7 @@ export function DeployStep({ config, updateConfig, sessionId, setSessionId, onCo
         const data = await generateInventory(config);
         sections.push(data.inventory);
       } catch {
-        sections.push('# Inventory unavailable — backend not running');
+        sections.push('# Inventory unavailable');
       }
       sections.push('');
     }

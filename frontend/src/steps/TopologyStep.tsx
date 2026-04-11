@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckIcon } from '@patternfly/react-icons';
 import { UIIcon } from '../components/ProductIcon';
+import { useTilt } from '../hooks/useTilt';
 import type { DeploymentConfig, Topology } from '../types';
 
 interface Props {
@@ -16,6 +17,7 @@ export const SIZING = [
 ];
 
 export function TopologyStep({ config, updateConfig }: Props) {
+  const tilt = useTilt(5);
   const [showSizing, setShowSizing] = useState(true);
 
   const setTopology = (t: Topology) => {
@@ -108,12 +110,13 @@ export function TopologyStep({ config, updateConfig }: Props) {
 
       <div className="aap-selection-grid aap-selection-grid--2col" role="radiogroup" aria-label="Deployment topology">
         <div
-          className={`aap-selection-card ${config.topology === 'growth' ? 'aap-selection-card--selected' : ''}`}
+          className={`aap-selection-card aap-tilt-card ${config.topology === 'growth' ? 'aap-selection-card--selected' : ''}`}
           role="radio"
           aria-checked={config.topology === 'growth'}
           tabIndex={0}
           onClick={() => setTopology('growth')}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTopology('growth'); } }}
+          {...tilt}
         >
           <div className="aap-selection-card__indicator" aria-hidden="true">
             <CheckIcon />
@@ -128,12 +131,13 @@ export function TopologyStep({ config, updateConfig }: Props) {
         </div>
 
         <div
-          className={`aap-selection-card ${config.topology === 'enterprise' ? 'aap-selection-card--selected' : ''}`}
+          className={`aap-selection-card aap-tilt-card ${config.topology === 'enterprise' ? 'aap-selection-card--selected' : ''}`}
           role="radio"
           aria-checked={config.topology === 'enterprise'}
           tabIndex={0}
           onClick={() => setTopology('enterprise')}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTopology('enterprise'); } }}
+          {...tilt}
         >
           <div className="aap-selection-card__badge">Recommended</div>
           <div className="aap-selection-card__indicator" aria-hidden="true">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExclamationTriangleIcon, KeyIcon } from '@patternfly/react-icons';
+import { ExclamationTriangleIcon, InfoCircleIcon, KeyIcon } from '@patternfly/react-icons';
 import type { DeploymentConfig, DatabaseType } from '../types';
 import { FormField, TextInput, NumberInput } from '../components/FormField';
 import { generatePassword } from './CredentialsStep';
@@ -88,7 +88,7 @@ export function DatabaseStep({ config, updateConfig }: Props) {
       {isOCP && (
         <div className="aap-alert aap-alert--info aap-alert--compact aap-mb-lg">
           <span className="aap-alert__icon" aria-hidden>
-            <ExclamationTriangleIcon />
+            <InfoCircleIcon />
           </span>
           <div className="aap-alert__content">
             <span className="aap-text-sm">Operator manages PostgreSQL by default. External is optional.</span>

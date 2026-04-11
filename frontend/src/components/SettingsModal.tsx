@@ -7,7 +7,29 @@ interface Props {
   onClose: () => void;
 }
 
+type ThemeMode = 'system' | 'light' | 'dark';
+
+function getTheme(): ThemeMode {
+  return (localStorage.getItem('aap-theme') as ThemeMode) || 'system';
+}
+
+function applyTheme(mode: ThemeMode) {
+  localStorage.setItem('aap-theme', mode);
+  const root = document.documentElement;
+  if (mode === 'dark') {
+    root.setAttribute('data-theme', 'dark');
+  } else if (mode === 'light') {
+    root.setAttribute('data-theme', 'light');
+  } else {
+    root.removeAttribute('data-theme');
+  }
+}
+
+// Apply on load
+applyTheme(getTheme());
+
 export function SettingsModal({ isOpen, onClose }: Props) {
+  const [theme, setTheme] = useState<ThemeMode>(getTheme);
   const [endpoint, setEndpoint] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('gpt-4o');
@@ -104,6 +126,25 @@ export function SettingsModal({ isOpen, onClose }: Props) {
         </div>
 
         <div className="aap-modal__body">
+          {/* Theme selector */}
+          <div className="aap-form-group aap-mb-lg">
+            <label className="aap-label">Appearance</label>
+            <div className="aap-flex-row" style={{ gap: 6 }}>
+              {(['system', 'light', 'dark'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`aap-btn aap-btn--sm ${theme === t ? 'aap-btn--primary' : 'aap-btn--secondary'}`}
+                  onClick={() => { setTheme(t); applyTheme(t); }}
+                >
+                  {t === 'system' ? 'System' : t === 'light' ? 'Light' : 'Dark'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <hr className="aap-divider aap-mb-lg" />
+
           <p className="aap-text-sm aap-text-muted aap-mb-lg">
             Configure Azure OpenAI credentials for AI-powered deployment assistance,
             error diagnosis, and configuration review. Credentials are encrypted at rest.
