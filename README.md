@@ -1,6 +1,6 @@
-# AAP Deployment Wizard
+# AAP Deployment Wizard (OCP)
 
-A native desktop application for deploying **Red Hat Ansible Automation Platform 2.6** containerized installations. Replaces manual inventory file editing with a guided PatternFly UI — like a setup wizard for AAP.
+A native desktop application for deploying **Red Hat Ansible Automation Platform 2.6** on **OpenShift Container Platform** or **RHEL 9 VMs**. Replaces manual CR editing, operator configuration, and inventory management with a guided PatternFly wizard UI.
 
 ![Electron](https://img.shields.io/badge/Electron-35-blue) ![React](https://img.shields.io/badge/React-18-blue) ![Python](https://img.shields.io/badge/Python-3.12-green) ![PatternFly](https://img.shields.io/badge/PatternFly-6-red)
 
@@ -8,8 +8,8 @@ A native desktop application for deploying **Red Hat Ansible Automation Platform
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/rraafffaa/aap_wizard-prod.git
-cd aap_wizard-prod
+git clone https://github.com/rraafffaa/aap_wizard_ocp.git
+cd aap_wizard_ocp
 
 # 2. Run setup (installs everything + launches the app)
 ./setup.sh
@@ -19,16 +19,53 @@ That's it. The desktop app opens automatically.
 
 ## What You Need
 
+### For OpenShift Deployments
+
+| Requirement | How to Get It |
+|-------------|---------------|
+| **Python 3.10+** | `brew install python3` or [python.org](https://www.python.org/downloads/) |
+| **Node.js 18+** | `brew install node` or [nodejs.org](https://nodejs.org/) |
+| **OpenShift cluster** | API URL + bearer token with cluster-admin privileges |
+
+### For Containerized Deployments (RHEL 9)
+
 | Requirement | How to Get It |
 |-------------|---------------|
 | **Python 3.10+** | `brew install python3` or [python.org](https://www.python.org/downloads/) |
 | **Node.js 18+** | `brew install node` or [nodejs.org](https://nodejs.org/) |
 | **Red Hat Registry credentials** | Your `rh-ee-*` username + password from [access.redhat.com](https://access.redhat.com) |
-| **A RHEL 9 target VM** | SSH access with sudo privileges (the machine where AAP gets installed) |
+| **A RHEL 9 target VM** | SSH access with sudo privileges |
 
 The AAP installer tarball is **already included** in this repo — no separate download needed.
 
 ## How It Works
+
+The wizard supports two deployment platforms:
+
+### OpenShift (Operator-based)
+
+```
+┌────────────────────────────────┐
+│  AAP Deployment Wizard (App)   │
+│  ┌──────────────────────────┐  │
+│  │ React + PatternFly 6     │  │    K8s API
+│  │ 13-step guided wizard    │  │ ──────────────▶  OpenShift Cluster
+│  └────────┬─────────────────┘  │                   ┌──────────────┐
+│           │                    │                   │ AAP Operator  │
+│  ┌────────▼─────────────────┐  │                   │ • Gateway    │
+│  │ Python FastAPI Backend   │  │                   │ • Controller │
+│  │ (auto-started by app)    │  │                   │ • Hub        │
+│  └──────────────────────────┘  │                   │ • EDA        │
+└────────────────────────────────┘                   └──────────────┘
+```
+
+1. **Open the app** — Backend starts automatically
+2. **Connect to your cluster** — OpenShift API URL + bearer token
+3. **Follow the wizard** — Namespace, operator, replicas, database, etc.
+4. **Click Deploy** — The app installs the AAP Operator, creates Secrets and Custom Resources
+5. **Done** — AAP 2.6 accessible via OpenShift routes
+
+### Containerized (SSH-based)
 
 ```
 ┌────────────────────────────────┐
@@ -45,12 +82,6 @@ The AAP installer tarball is **already included** in this repo — no separate d
 └────────────────────────────────┘                   └──────────────┘
 ```
 
-1. **Open the app** — Backend starts automatically
-2. **Enter your Red Hat credentials** — Registry login
-3. **Follow the wizard** — Target VM, topology, passwords, etc.
-4. **Click Deploy** — The app SSHes into your VM and installs AAP
-5. **Done** — AAP 2.6 accessible on your target VM
-
 ## Commands
 
 | Command | Description |
@@ -59,16 +90,27 @@ The AAP installer tarball is **already included** in this repo — no separate d
 | `./setup.sh --launch` | Launch (skip install) |
 | `./setup.sh --test` | Run all tests |
 
-## Deployment Topologies
-
-| Topology | Description | VMs |
-|----------|-------------|-----|
-| **Growth** | All components on one host | 1 |
-| **Enterprise** | Multi-node deployment | 2+ |
-
-Both support **online** (pulls from registry.redhat.io) and **disconnected** (bundled tarball) installations.
-
 ## Wizard Steps
+
+### OpenShift Flow (13 steps)
+
+| # | Step | What You Configure |
+|---|------|--------------------|
+| 1 | Welcome | Overview + prerequisites |
+| 2 | License Agreement | EULA acceptance |
+| 3 | Cluster Connection | OpenShift API URL + token → verifies connection |
+| 4 | Namespace & Storage | Target namespace + storage class |
+| 5 | AAP Operator | Operator channel + catalog source |
+| 6 | Replicas & Resources | Component replica counts + resource presets |
+| 7 | Database | Managed or external PostgreSQL |
+| 8 | Routes & TLS | Route hostname + TLS termination mode |
+| 9 | Admin Passwords | Gateway admin password |
+| 10 | Advanced Variables | 170+ AAP installer variables |
+| 11 | Pre-flight Checks | Cluster validation |
+| 12 | Deploy | Live progress with streaming logs |
+| 13 | Complete | Access URLs via OpenShift routes |
+
+### Containerized Flow (15 steps)
 
 | # | Step | What You Configure |
 |---|------|--------------------|
@@ -91,12 +133,12 @@ Both support **online** (pulls from registry.redhat.io) and **disconnected** (bu
 ## Project Structure
 
 ```
-aap_wizard/
+aap_wizard_ocp/
 ├── setup.sh                  # One-command setup + launch
 ├── frontend/                 # Electron + React UI
 │   ├── electron/             # Electron main process (starts backend)
 │   ├── src/
-│   │   ├── steps/            # 15 wizard step components
+│   │   ├── steps/            # 21 wizard step components (shared across flows)
 │   │   ├── components/       # Shared UI (LoginPage, FormField, etc.)
 │   │   ├── hooks/            # React hooks (store, validation, deploy)
 │   │   ├── utils/            # Validators, formatters, crypto
@@ -105,27 +147,22 @@ aap_wizard/
 ├── backend/                  # Python FastAPI backend
 │   ├── app/
 │   │   ├── main.py           # API routes
-│   │   ├── deployer.py       # Deployment engine (SSH + Ansible)
-│   │   ├── inventory.py      # INI inventory generator
+│   │   ├── deployer.py       # Containerized deployment engine (SSH + Ansible)
+│   │   ├── ocp_deployer.py   # OCP deployment engine (operator-based)
+│   │   ├── ocp_client.py     # OpenShift API client (httpx)
+│   │   ├── ocp_preflight.py  # OCP-specific pre-flight checks
+│   │   ├── cr_generator.py   # Custom Resource YAML generator
+│   │   ├── inventory.py      # INI inventory generator (containerized mode)
 │   │   ├── preflight.py      # Pre-flight system checks
 │   │   ├── auth.py           # JWT authentication
-│   │   └── services/         # SSH, ports, AI debugger, audit
-│   ├── tests/                # 21 backend test files
+│   │   └── services/         # SSH, AI debugger, audit, backup, health, certs
+│   ├── tests/                # 25 backend test files
 │   └── requirements.txt
 ├── ansible-automation-platform-containerized-setup-2.6-6.tar.gz  # Bundled
 ├── Dockerfile                # Container build (alternative to desktop)
 ├── CLAUDE.md                 # Claude Code guidance
-└── TEST_PLAN.md              # Full test documentation
+└── LICENSE                   # MIT License
 ```
-
-## Using Claude Code with This Repo
-
-This repo includes a `CLAUDE.md` file. If you use [Claude Code](https://claude.com/claude-code), it will automatically understand the project structure, how to run tests, and how to make changes. Just ask it:
-
-- *"Run the tests"*
-- *"Add a new wizard step for X"*
-- *"Fix the SSH connection issue"*
-- *"Deploy to a new VM at 10.0.0.5"*
 
 ## Troubleshooting
 
@@ -141,13 +178,15 @@ node --version      # Need 18+
 ./setup.sh
 ```
 
-### "Cannot connect to target VM"
+### "Cannot connect to cluster" (OCP mode)
+- Verify the OpenShift API URL is reachable
+- Ensure your bearer token has cluster-admin privileges
+- Token can be retrieved via `oc whoami -t`
+
+### "Cannot connect to target VM" (Containerized mode)
 - Target VM must be reachable via SSH from your computer
 - The SSH user needs sudo privileges
 - Verify password is correct
-
-### "/home disk space" warning
-The wizard auto-detects small `/home` partitions and moves storage to `/opt`. No action needed.
 
 ### Backend not starting
 ```bash
