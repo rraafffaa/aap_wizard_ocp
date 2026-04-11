@@ -1,4 +1,4 @@
-# AAP Deployment Wizard (OCP)
+# AAP Deployment Wizard (OCP) & Containerized
 
 A native desktop application for deploying **Red Hat Ansible Automation Platform 2.6** on **OpenShift Container Platform** or **RHEL 9 VMs**. Replaces manual CR editing, operator configuration, and inventory management with a guided PatternFly wizard UI.
 
