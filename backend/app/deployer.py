@@ -692,6 +692,12 @@ class Deployer:
                 "fix_description": "Clear duplicate is_api_port flag in gateway database",
                 "fix_id": "gateway_api_port_dup",
             },
+            {
+                "pattern": "--hostname is a required argument",
+                "title": "Controller init missing hostname",
+                "fix_description": "Add routable_hostname to inventory host entries",
+                "fix_id": "controller_hostname_missing",
+            },
         ]
 
         for p in patterns:
@@ -768,6 +774,24 @@ class Deployer:
                 "-c \"UPDATE aap_gateway_api_httpport SET is_api_port = false WHERE is_api_port = true;\""
             )
             await self._log("[OK] Cleared duplicate is_api_port flag in gateway database")
+            return True
+
+        elif fix_id == "controller_hostname_missing":
+            fqdn = ""
+            await self._ssh_cmd("hostname -f")
+            for line in reversed(self._log_lines[-5:]):
+                s = line.strip()
+                if s and not s.startswith("$") and not s.startswith("[") and "." in s:
+                    fqdn = s
+                    break
+            if not fqdn:
+                fqdn = self.config.target_host
+            inv_file = f"{shlex.quote(setup_path)}/inventory-wizard"
+            for section in ["automationgateway", "automationcontroller", "automationhub", "automationeda"]:
+                await self._ssh_cmd(
+                    f"sed -i '/\\[{section}\\]/,/^\\[/{{ /^[^\\[]/{{ /routable_hostname/!s/$/ routable_hostname={fqdn}/}} }}' {inv_file}"
+                )
+            await self._log(f"[OK] Added routable_hostname={fqdn} to inventory host entries")
             return True
 
         return False

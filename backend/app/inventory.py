@@ -76,13 +76,13 @@ class InventoryGenerator:
         # Gateway
         lines.append("[automationgateway]")
         for h in self.c.gateway.hosts:
-            lines.append(h)
+            lines.append(f"{h} routable_hostname={h}")
         lines.append("")
 
         # Controller
         lines.append("[automationcontroller]")
         for h in self.c.controller.hosts:
-            lines.append(h)
+            lines.append(f"{h} routable_hostname={h}")
         lines.append("")
 
         # Execution nodes (enterprise only)
@@ -94,19 +94,19 @@ class InventoryGenerator:
                     if node.receptor_type != "execution"
                     else ""
                 )
-                lines.append(f"{node.host}{extra}")
+                lines.append(f"{node.host} routable_hostname={node.host}{extra}")
             lines.append("")
 
         # Hub
         lines.append("[automationhub]")
         for h in self.c.hub.hosts:
-            lines.append(h)
+            lines.append(f"{h} routable_hostname={h}")
         lines.append("")
 
         # EDA
         lines.append("[automationeda]")
         for h in self.c.eda.hosts:
-            lines.append(h)
+            lines.append(f"{h} routable_hostname={h}")
         lines.append("")
 
         # Database (growth only — managed)

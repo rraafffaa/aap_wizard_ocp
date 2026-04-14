@@ -44,25 +44,25 @@ class TestInventoryGeneratorGrowth:
         result = _render(default_config)
         lines = result.split("\n")
         idx = lines.index("[automationgateway]")
-        assert lines[idx + 1] == "aap.example.org"
+        assert lines[idx + 1] == "aap.example.org routable_hostname=aap.example.org"
 
     def test_controller_host_in_automationcontroller(self, default_config):
         result = _render(default_config)
         lines = result.split("\n")
         idx = lines.index("[automationcontroller]")
-        assert lines[idx + 1] == "aap.example.org"
+        assert lines[idx + 1] == "aap.example.org routable_hostname=aap.example.org"
 
     def test_hub_host_in_automationhub(self, default_config):
         result = _render(default_config)
         lines = result.split("\n")
         idx = lines.index("[automationhub]")
-        assert lines[idx + 1] == "aap.example.org"
+        assert lines[idx + 1] == "aap.example.org routable_hostname=aap.example.org"
 
     def test_eda_host_in_automationeda(self, default_config):
         result = _render(default_config)
         lines = result.split("\n")
         idx = lines.index("[automationeda]")
-        assert lines[idx + 1] == "aap.example.org"
+        assert lines[idx + 1] == "aap.example.org routable_hostname=aap.example.org"
 
     def test_single_host_in_all_groups(self, default_config):
         result = _render(default_config)
@@ -74,7 +74,7 @@ class TestInventoryGeneratorGrowth:
         ]:
             lines = result.split("\n")
             idx = lines.index(section)
-            assert lines[idx + 1] == "aap.example.org"
+            assert lines[idx + 1] == "aap.example.org routable_hostname=aap.example.org"
 
     def test_registry_credentials_in_all_vars(self, default_config):
         result = _render(default_config)
@@ -210,29 +210,29 @@ class TestInventoryGeneratorEnterprise:
         result = _render(enterprise_config)
         lines = result.split("\n")
         idx = lines.index("[automationgateway]")
-        assert lines[idx + 1] == "gw1.example.org"
-        assert lines[idx + 2] == "gw2.example.org"
+        assert lines[idx + 1] == "gw1.example.org routable_hostname=gw1.example.org"
+        assert lines[idx + 2] == "gw2.example.org routable_hostname=gw2.example.org"
 
     def test_multiple_controller_hosts(self, enterprise_config):
         result = _render(enterprise_config)
         lines = result.split("\n")
         idx = lines.index("[automationcontroller]")
-        assert lines[idx + 1] == "ctrl1.example.org"
-        assert lines[idx + 2] == "ctrl2.example.org"
+        assert lines[idx + 1] == "ctrl1.example.org routable_hostname=ctrl1.example.org"
+        assert lines[idx + 2] == "ctrl2.example.org routable_hostname=ctrl2.example.org"
 
     def test_multiple_hub_hosts(self, enterprise_config):
         result = _render(enterprise_config)
         lines = result.split("\n")
         idx = lines.index("[automationhub]")
-        assert lines[idx + 1] == "hub1.example.org"
-        assert lines[idx + 2] == "hub2.example.org"
+        assert lines[idx + 1] == "hub1.example.org routable_hostname=hub1.example.org"
+        assert lines[idx + 2] == "hub2.example.org routable_hostname=hub2.example.org"
 
     def test_multiple_eda_hosts(self, enterprise_config):
         result = _render(enterprise_config)
         lines = result.split("\n")
         idx = lines.index("[automationeda]")
-        assert lines[idx + 1] == "eda1.example.org"
-        assert lines[idx + 2] == "eda2.example.org"
+        assert lines[idx + 1] == "eda1.example.org routable_hostname=eda1.example.org"
+        assert lines[idx + 2] == "eda2.example.org routable_hostname=eda2.example.org"
 
     def test_execution_nodes(self, enterprise_config):
         result = _render(enterprise_config)
