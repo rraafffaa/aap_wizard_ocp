@@ -18,10 +18,9 @@ export const SIZING = [
 
 export function TopologyStep({ config, updateConfig }: Props) {
   const tilt = useTilt(5);
-  const [showSizing, setShowSizing] = useState(true);
-
+  const [showSizing, setShowSizing] = useState(false);
   const setTopology = (t: Topology) => {
-    const newConfig: Partial<DeploymentConfig> = { topology: t };
+    const newConfig: Partial<DeploymentConfig> = { topology: t, selected_profile_id: '' };
     if (t === 'growth') {
       newConfig.redis_mode = 'standalone';
     }
@@ -33,126 +32,129 @@ export function TopologyStep({ config, updateConfig }: Props) {
       <div className="aap-step__header">
         <h2 className="aap-step__title">Deployment Topology</h2>
         <p className="aap-step__description">
-          Enterprise is recommended for production workloads.
+          Configure your deployment topology.
         </p>
       </div>
 
       <div className="aap-card aap-mb-lg">
         <div className="aap-card__header">
           <div>
-            <div className="aap-card__title">Need help choosing?</div>
+            <div className="aap-card__title">Select Topology</div>
             <p className="aap-card__description aap-mt-sm">
-              Get a recommendation based on your workload size.
+              Choose a topology that fits your deployment needs.
             </p>
           </div>
-          <button
-            type="button"
-            className="aap-btn aap-btn--secondary"
-            onClick={() => setShowSizing(!showSizing)}
-            aria-expanded={showSizing}
-            aria-controls="sizing-calculator-table"
-          >
-            {showSizing ? 'Hide Calculator' : 'Sizing Calculator'}
-          </button>
         </div>
+            <div className="aap-selection-grid aap-selection-grid--2col aap-mt-lg" role="radiogroup" aria-label="Deployment topology">
+              <div
+                className={`aap-selection-card aap-tilt-card ${config.topology === 'growth' ? 'aap-selection-card--selected' : ''}`}
+                role="radio"
+                aria-checked={config.topology === 'growth'}
+                tabIndex={0}
+                onClick={() => setTopology('growth')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTopology('growth'); } }}
+                {...tilt}
+              >
+                <div className="aap-selection-card__indicator" aria-hidden="true">
+                  <CheckIcon />
+                </div>
+                <div className="aap-selection-card__icon" aria-hidden="true">
+                  <UIIcon name="server" size={24} />
+                </div>
+                <div className="aap-selection-card__title">Growth (All-in-One)</div>
+                <div className="aap-selection-card__description">
+                  Single host — ideal for dev and small deployments.
+                </div>
+              </div>
 
-        {showSizing && (
-          <div id="sizing-calculator-table" className="aap-mt-lg">
-            <table className="aap-table">
-              <thead>
-                <tr>
-                  <th>Size</th>
-                  <th>Users</th>
-                  <th>Jobs/Day</th>
-                  <th>Managed Hosts</th>
-                  <th>RAM</th>
-                  <th>CPUs</th>
-                  <th>Topology</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {SIZING.map((s) => (
-                  <tr key={s.label}>
-                    <td>{s.label}</td>
-                    <td>{s.users}</td>
-                    <td>{s.jobs}</td>
-                    <td>{s.hosts}</td>
-                    <td className="aap-text-mono aap-text-sm">{s.ram}</td>
-                    <td className="aap-text-mono aap-text-sm">{s.cpu}</td>
-                    <td>
-                      <span className={s.rec === 'growth' ? 'aap-badge aap-badge--info' : 'aap-badge aap-badge--warning'}>
-                        {s.rec === 'growth' ? 'Growth' : 'Enterprise'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className={`aap-btn aap-btn--sm ${config.topology === s.rec ? 'aap-btn--primary' : 'aap-btn--secondary'}`}
-                        onClick={() => setTopology(s.rec)}
-                      >
-                        {config.topology === s.rec ? (
-                          <>
-                            <CheckIcon /> Selected
-                          </>
-                        ) : (
-                          'Select'
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              <div
+                className={`aap-selection-card aap-tilt-card ${config.topology === 'enterprise' ? 'aap-selection-card--selected' : ''}`}
+                role="radio"
+                aria-checked={config.topology === 'enterprise'}
+                tabIndex={0}
+                onClick={() => setTopology('enterprise')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTopology('enterprise'); } }}
+                {...tilt}
+              >
+                <div className="aap-selection-card__indicator" aria-hidden="true">
+                  <CheckIcon />
+                </div>
+                <div className="aap-selection-card__icon" aria-hidden="true">
+                  <UIIcon name="cluster" size={24} />
+                </div>
+                <div className="aap-selection-card__title">Enterprise</div>
+                <div className="aap-selection-card__description">
+                  Multi-node with HA and dedicated execution nodes.
+                </div>
+              </div>
+            </div>
+
+            {/* Sizing Calculator */}
+            <div className="aap-mt-lg">
+              <button
+                type="button"
+                className="aap-btn aap-btn--secondary"
+                onClick={() => setShowSizing(!showSizing)}
+                aria-expanded={showSizing}
+                aria-controls="sizing-calculator-table"
+              >
+                {showSizing ? 'Hide Sizing Calculator' : 'Sizing Calculator'}
+              </button>
+
+              {showSizing && (
+                <div id="sizing-calculator-table" className="aap-mt-lg">
+                  <table className="aap-table">
+                    <thead>
+                      <tr>
+                        <th>Size</th>
+                        <th>Users</th>
+                        <th>Jobs/Day</th>
+                        <th>Managed Hosts</th>
+                        <th>RAM</th>
+                        <th>CPUs</th>
+                        <th>Topology</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SIZING.map((s) => (
+                        <tr key={s.label}>
+                          <td>{s.label}</td>
+                          <td>{s.users}</td>
+                          <td>{s.jobs}</td>
+                          <td>{s.hosts}</td>
+                          <td className="aap-text-mono aap-text-sm">{s.ram}</td>
+                          <td className="aap-text-mono aap-text-sm">{s.cpu}</td>
+                          <td>
+                            <span className={s.rec === 'growth' ? 'aap-badge aap-badge--info' : 'aap-badge aap-badge--warning'}>
+                              {s.rec === 'growth' ? 'Growth' : 'Enterprise'}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className={`aap-btn aap-btn--sm ${config.topology === s.rec ? 'aap-btn--primary' : 'aap-btn--secondary'}`}
+                              onClick={() => setTopology(s.rec)}
+                            >
+                              {config.topology === s.rec ? (
+                                <>
+                                  <CheckIcon /> Selected
+                                </>
+                              ) : (
+                                'Select'
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
       </div>
 
-      <div className="aap-selection-grid aap-selection-grid--2col" role="radiogroup" aria-label="Deployment topology">
-        <div
-          className={`aap-selection-card aap-tilt-card ${config.topology === 'growth' ? 'aap-selection-card--selected' : ''}`}
-          role="radio"
-          aria-checked={config.topology === 'growth'}
-          tabIndex={0}
-          onClick={() => setTopology('growth')}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTopology('growth'); } }}
-          {...tilt}
-        >
-          <div className="aap-selection-card__indicator" aria-hidden="true">
-            <CheckIcon />
-          </div>
-          <div className="aap-selection-card__icon" aria-hidden="true">
-            <UIIcon name="server" size={24} />
-          </div>
-          <div className="aap-selection-card__title">Growth (All-in-One)</div>
-          <div className="aap-selection-card__description">
-            Single host — ideal for dev and small deployments.
-          </div>
-        </div>
-
-        <div
-          className={`aap-selection-card aap-tilt-card ${config.topology === 'enterprise' ? 'aap-selection-card--selected' : ''}`}
-          role="radio"
-          aria-checked={config.topology === 'enterprise'}
-          tabIndex={0}
-          onClick={() => setTopology('enterprise')}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTopology('enterprise'); } }}
-          {...tilt}
-        >
-          <div className="aap-selection-card__badge">Recommended</div>
-          <div className="aap-selection-card__indicator" aria-hidden="true">
-            <CheckIcon />
-          </div>
-          <div className="aap-selection-card__icon" aria-hidden="true">
-            <UIIcon name="cluster" size={24} />
-          </div>
-          <div className="aap-selection-card__title">Enterprise</div>
-          <div className="aap-selection-card__description">
-            Multi-node with HA and dedicated execution nodes.
-          </div>
-        </div>
-      </div>
-
+      {/* Topology Comparison */}
       <div className="aap-card aap-mt-lg">
         <div className="aap-card__header">
           <div className="aap-card__title">Topology Comparison</div>
