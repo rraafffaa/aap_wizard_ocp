@@ -2,7 +2,7 @@
 
 ## What This Project Is
 
-A native **Electron desktop app** (not a browser app) that guides users through deploying Red Hat Ansible Automation Platform 2.6 on **OpenShift Container Platform**. Forked from the original containerized wizard (which targets RHEL 9 VMs), this variant deploys AAP via the AAP Operator and Custom Resources instead of SSH + ansible-playbook.
+A native **Electron desktop app**  that guides users through deploying Red Hat Ansible Automation Platform 2.6 on **OpenShift Container Platform**. Forked from the original containerized wizard (which targets RHEL 9 VMs), this variant deploys AAP via the AAP Operator and Custom Resources instead of SSH + ansible-playbook.
 
 ## Who This Is For
 
