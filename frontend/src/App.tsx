@@ -33,7 +33,7 @@ import { ProfileManager } from './components/ProfileManager';
 import { ConfirmModal } from './components/ConfirmModal';
 import { SettingsModal } from './components/SettingsModal';
 import { CommandPalette } from './components/CommandPalette';
-import { setAuthToken, getStoredToken, isTokenExpired } from './api';
+import { BASE, setAuthToken, getStoredToken, isTokenExpired } from './api';
 
 type ToastType = 'info' | 'error' | 'success';
 
@@ -48,7 +48,7 @@ function WizardApp() {
   useEffect(() => {
     const token = getStoredToken();
     if (!token || isTokenExpired(token)) {
-      fetch('/api/auth/sso', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      fetch(`${BASE}/api/auth/sso`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
         .then(res => res.json())
         .then(data => {
           if (data.token) {

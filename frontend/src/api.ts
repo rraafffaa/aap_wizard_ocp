@@ -197,8 +197,27 @@ async function request<T>(path: string, options?: RequestInit, timeoutMs?: numbe
     });
     if (!res.ok) {
       if (res.status === 401) {
+        // Try silent SSO re-authentication before giving up
+        try {
+          const ssoRes = await fetch(`${BASE}/api/auth/sso`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (ssoRes.ok) {
+            const data = await ssoRes.json();
+            if (data.token) {
+              setAuthToken(data.token);
+              // Retry the original request with the new token
+              const retryRes = await fetch(`${BASE}${path}`, {
+                ...options,
+                headers: { ...headers, Authorization: `Bearer ${data.token}` },
+                signal: controller.signal,
+              });
+              if (retryRes.ok) return await retryRes.json();
+            }
+          }
+        } catch { /* SSO re-auth failed */ }
         clearAuth();
-        window.location.reload();
         throw new ApiError(401, 'Session expired — please log in again');
       }
       const body = await res.text().catch(() => 'Unknown error');

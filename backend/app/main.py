@@ -239,6 +239,15 @@ async def list_profiles(category: Optional[str] = None):
     return {"profiles": [asdict(p) for p in profiles]}
 
 
+@app.get("/api/profiles/tested")
+async def list_tested_profiles():
+    """Return only Red Hat tested topology profiles."""
+    profiles = profile_service.get_tested_topologies()
+    return {"profiles": [{"id": p.id, "name": p.name, "description": p.description,
+                          "topology": p.topology, "tags": p.tags, "tested": p.tested,
+                          "config": p.config} for p in profiles]}
+
+
 @app.get("/api/profiles/{profile_id}")
 async def get_profile(profile_id: str):
     profile = profile_service.get_by_id(profile_id)
