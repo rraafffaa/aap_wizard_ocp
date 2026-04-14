@@ -3,15 +3,15 @@ set -euo pipefail
 
 # ----------------------------------------------------------
 # AAP Deployment Wizard — Azure Container Instances Deployment
-# Uses existing resource group (your-resource-group)
+# Update these variables for your environment
 # ----------------------------------------------------------
 
-RG="your-resource-group"
-LOCATION="eastus"
-ACR_NAME="your-acr-name"
+RG="${AZURE_RESOURCE_GROUP:-your-resource-group}"
+LOCATION="${AZURE_LOCATION:-eastus}"
+ACR_NAME="${AZURE_ACR_NAME:-your-acr-name}"
 IMAGE_NAME="aap-wizard"
 CONTAINER_NAME="aap-wizard"
-DNS_LABEL="aap-wizard"
+DNS_LABEL="${AZURE_DNS_LABEL:-aap-wizard}"
 TAG="latest"
 
 echo "==> Using resource group: $RG"

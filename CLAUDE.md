@@ -7,7 +7,6 @@ A native **Electron desktop app** (not a browser app) that guides users through 
 ## Who This Is For
 
 - **Primary users:** Red Hat customers and SAs deploying AAP on OpenShift
-- **Internal stakeholders:** Cloud Services team, SRE, Product Management
 - **Goal:** Eliminate the complexity of manually configuring AAP Operator CRs, subscriptions, and namespace setup
 
 ## Architecture
@@ -36,7 +35,7 @@ Backend (Python FastAPI)
 ### OCP-Specific Components
 - **OCP wizard steps:** ClusterStep, NamespaceStep, OperatorStep, SubscriptionStep, ReplicasStep, TopologyStep, OnboardingStep
 - **Shared with original wizard:** Auth, Electron shell, many UI components, AI debugger, audit service
-- **Original wizard repo:** `~/aap_wizard/` (containerized RHEL 9 target)
+- **Original wizard:** Containerized RHEL 9 deployment target
 
 ## How to Run
 

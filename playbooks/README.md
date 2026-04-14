@@ -30,9 +30,9 @@ ansible-vault create playbooks/group_vars/vault.yml
 ```
 ```yaml
 vault_registry_username: "your-rhn-username"
-vault_registry_password: "your-rhn-password"
-vault_aap_admin_password: "StrongPassword!2026"
-vault_pg_password: "PgStrongPass!2026"
+vault_registry_password: "YOUR_REGISTRY_PASSWORD"
+vault_aap_admin_password: "YOUR_ADMIN_PASSWORD"
+vault_pg_password: "YOUR_PG_PASSWORD"
 ```
 
 ## Run Order

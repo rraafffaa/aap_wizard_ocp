@@ -230,7 +230,7 @@ oc login --token=<token> --server=https://<cluster-api>
 
 ```bash
 make oc-build    # Builds frontend, backend, worker images
-make oc-push     # Pushes to quay.io/your-username/
+make oc-push     # Pushes to your container registry
 ```
 
 **3. Set up secrets:**
@@ -251,7 +251,7 @@ make oc-deploy   # Applies all manifests in order
 make oc-status   # Shows pods, services, routes, HPA
 ```
 
-Images are pushed to `quay.io/your-username/aap-wizard-{frontend,backend,worker}:latest` by default. Override with:
+Images are pushed to `quay.io/<your-username>/aap-wizard-{frontend,backend,worker}:latest` by default. Override with:
 
 ```bash
 REGISTRY=myregistry.io IMG_NS=myorg TAG=v1.0.0 make oc-build oc-push
@@ -771,7 +771,7 @@ Located in `openshift/`:
 | Script | Purpose |
 |--------|---------|
 | `scripts/build-images.sh` | Build frontend, backend, worker container images |
-| `scripts/push-images.sh` | Push images to registry (default: `quay.io/your-username/`) |
+| `scripts/push-images.sh` | Push images to registry (set `REGISTRY` env var) |
 | `scripts/deploy.sh` | Apply all OpenShift manifests in dependency order |
 | `scripts/setup-openshift.sh` | Create project, configure pull secrets |
 | `scripts/scale-demo.sh` | Demo: scale backend 5 → 2 replicas |

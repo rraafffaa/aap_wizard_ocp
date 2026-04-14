@@ -13,9 +13,9 @@ frontend/dist/
 frontend/release/
 frontend/build/icon.ico
 
-# AAP installer bundle (extracted directory - do not commit)
+# AAP installer bundle (downloaded at deploy time, never committed)
 ansible-automation-platform-containerized-setup-*/
-# Note: the .tar.gz tarball IS committed so coworkers get everything in one clone
+ansible-automation-platform-containerized-setup-*.tar.gz
 
 # OS / Editor
 .DS_Store
