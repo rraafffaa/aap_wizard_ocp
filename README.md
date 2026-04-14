@@ -2,7 +2,7 @@
 
 A native desktop application for deploying **Red Hat Ansible Automation Platform 2.6** on **OpenShift Container Platform** or **RHEL 9 VMs**. Replaces manual CR editing, operator configuration, and inventory management with a guided PatternFly wizard UI.
 
-![Electron](https://img.shields.io/badge/Electron-35-blue) ![React](https://img.shields.io/badge/React-18-blue) ![Python](https://img.shields.io/badge/Python-3.12-green) ![PatternFly](https://img.shields.io/badge/PatternFly-6-red)
+![Electron](https://img.shields.io/badge/Electron-35-blue) ![React](https://img.shields.io/badge/React-18-blue) ![Python](https://img.shields.io/badge/Python-3.12-green) ![PatternFly](https://img.shields.io/badge/PatternFly-6-red) ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Quick Start
 
@@ -34,9 +34,10 @@ That's it. The desktop app opens automatically.
 | **Python 3.10+** | `brew install python3` or [python.org](https://www.python.org/downloads/) |
 | **Node.js 18+** | `brew install node` or [nodejs.org](https://nodejs.org/) |
 | **Red Hat Registry credentials** | Your `rh-ee-*` username + password from [access.redhat.com](https://access.redhat.com) |
+| **Red Hat offline token** (optional) | From [access.redhat.com/management/api](https://access.redhat.com/management/api) — used to download the AAP installer tarball |
 | **A RHEL 9 target VM** | SSH access with sudo privileges |
 
-The AAP installer tarball is **already included** in this repo — no separate download needed.
+The AAP installer tarball is **downloaded at deploy time** using your Red Hat offline token. If no token is provided, the wizard falls back to `ansible-galaxy` for collection installation.
 
 ## How It Works
 
@@ -72,7 +73,7 @@ The wizard supports two deployment platforms:
 │  AAP Deployment Wizard (App)   │
 │  ┌──────────────────────────┐  │
 │  │ React + PatternFly 6     │  │      SSH
-│  │ 15-step guided wizard    │  │ ──────────────▶  Your RHEL 9 VM
+│  │ 13-step guided wizard    │  │ ──────────────▶  Your RHEL 9 VM
 │  └────────┬─────────────────┘  │                   ┌──────────────┐
 │           │                    │                   │ AAP 2.6      │
 │  ┌────────▼─────────────────┐  │                   │ • Gateway    │
@@ -98,48 +99,47 @@ The wizard supports two deployment platforms:
 |---|------|--------------------|
 | 1 | Welcome | Overview + prerequisites |
 | 2 | License Agreement | EULA acceptance |
-| 3 | Cluster Connection | OpenShift API URL + token → verifies connection |
+| 3 | Cluster Connection | OpenShift API URL + bearer token → verifies connection |
 | 4 | Namespace & Storage | Target namespace + storage class |
 | 5 | AAP Operator | Operator channel + catalog source |
 | 6 | Replicas & Resources | Component replica counts + resource presets |
 | 7 | Database | Managed or external PostgreSQL |
 | 8 | Routes & TLS | Route hostname + TLS termination mode |
 | 9 | Admin Passwords | Gateway admin password |
-| 10 | Advanced Variables | 170+ AAP installer variables |
-| 11 | Pre-flight Checks | Cluster validation |
+| 10 | Advanced Variables | 170+ AAP CR configuration variables |
+| 11 | Pre-flight Checks | Cluster validation (RBAC, nodes, storage) |
 | 12 | Deploy | Live progress with streaming logs |
 | 13 | Complete | Access URLs via OpenShift routes |
 
-### Containerized Flow (15 steps)
+### Containerized Flow (13 steps)
 
 | # | Step | What You Configure |
 |---|------|--------------------|
 | 1 | Welcome | Overview + prerequisites |
-| 2 | EULA | License acceptance |
-| 3 | Subscription | Online/disconnected + registry credentials |
-| 4 | Topology | Growth or Enterprise |
-| 5 | Target | SSH host, user, password → verifies connection |
+| 2 | License Agreement | EULA acceptance |
+| 3 | Image Source | Online/disconnected + registry credentials + RH offline token |
+| 4 | Topology | Growth or Enterprise (with sizing calculator) |
+| 5 | SSH Target | SSH host, user, password → verifies connection |
 | 6 | Hosts | Component FQDNs |
-| 7 | Components | Gateway, Controller, Hub, EDA options |
-| 8 | Database | Managed or external PostgreSQL |
-| 9 | Network | Ports, TLS settings |
-| 10 | Credentials | Admin passwords per component |
-| 11 | Advanced | 170+ installer variables |
-| 12 | Preflight | Auto-checks OS, RAM, CPU, disk, podman |
-| 13 | Review | Final review + inventory preview |
-| 14 | Deploy | Live progress with streaming logs |
-| 15 | Complete | Access URLs + next steps |
+| 7 | Database | Managed or external PostgreSQL |
+| 8 | Network & TLS | Ports, TLS settings |
+| 9 | Admin Passwords | Admin passwords per component |
+| 10 | Advanced Variables | 170+ installer variables |
+| 11 | Pre-flight Checks | Auto-checks OS, RAM, CPU, disk, podman |
+| 12 | Deploy | Live progress with streaming logs |
+| 13 | Complete | Access URLs + next steps |
 
 ## Project Structure
 
 ```
 aap_wizard_ocp/
 ├── setup.sh                  # One-command setup + launch
+├── run.sh                    # Launch script (backend + frontend)
 ├── frontend/                 # Electron + React UI
 │   ├── electron/             # Electron main process (starts backend)
 │   ├── src/
-│   │   ├── steps/            # 21 wizard step components (shared across flows)
-│   │   ├── components/       # Shared UI (LoginPage, FormField, etc.)
+│   │   ├── steps/            # 17 active wizard step components (shared across flows)
+│   │   ├── components/       # Shared UI (ProfileManager, FormField, etc.)
 │   │   ├── hooks/            # React hooks (store, validation, deploy)
 │   │   ├── utils/            # Validators, formatters, crypto
 │   │   └── __tests__/        # Frontend tests
@@ -147,6 +147,7 @@ aap_wizard_ocp/
 ├── backend/                  # Python FastAPI backend
 │   ├── app/
 │   │   ├── main.py           # API routes
+│   │   ├── models.py         # Pydantic models
 │   │   ├── deployer.py       # Containerized deployment engine (SSH + Ansible)
 │   │   ├── ocp_deployer.py   # OCP deployment engine (operator-based)
 │   │   ├── ocp_client.py     # OpenShift API client (httpx)
@@ -155,10 +156,10 @@ aap_wizard_ocp/
 │   │   ├── inventory.py      # INI inventory generator (containerized mode)
 │   │   ├── preflight.py      # Pre-flight system checks
 │   │   ├── auth.py           # JWT authentication
-│   │   └── services/         # SSH, AI debugger, audit, backup, health, certs
-│   ├── tests/                # 25 backend test files
+│   │   ├── middleware.py     # Request middleware
+│   │   └── services/         # 22 service modules (SSH, profiles, RH download, health, etc.)
+│   ├── tests/                # 26 backend test files
 │   └── requirements.txt
-├── ansible-automation-platform-containerized-setup-2.6-6.tar.gz  # Bundled
 ├── Dockerfile                # Container build (alternative to desktop)
 ├── CLAUDE.md                 # Claude Code guidance
 └── LICENSE                   # MIT License
