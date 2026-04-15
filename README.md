@@ -197,16 +197,14 @@ pip install -r requirements.txt
 python -m uvicorn app.main:app --port 8000
 ```
 
-## Alternative: Docker
+## Alternative: Docker (Not Currently Working)
 
-If you prefer running as a container instead of a desktop app:
+> **Note:** The Docker/container image build has a known TypeScript compilation error and is not functional at this time. The recommended path is the **native desktop app** via `./setup.sh`, which auto-installs all dependencies and launches the Electron UI locally. If you're on a Mac or Linux machine with Node.js 18+ and Python 3.10+ installed, it should work out of the box with that single command.
 
 ```bash
-# Build and run
+# NOT WORKING — use ./setup.sh instead
 docker build -t aap-wizard .
 docker run -d -p 443:443 --name aap-wizard aap-wizard
-
-# Open https://localhost in your browser
 ```
 
 ## License
