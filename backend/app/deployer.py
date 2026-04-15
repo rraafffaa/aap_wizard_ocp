@@ -695,7 +695,7 @@ class Deployer:
             {
                 "pattern": "--hostname is a required argument",
                 "title": "Controller init missing hostname",
-                "fix_description": "Add routable_hostname to inventory host entries",
+                "fix_description": "Add routable_hostname to inventory and patch installer deprovision task",
                 "fix_id": "controller_hostname_missing",
             },
         ]
@@ -800,6 +800,14 @@ class Deployer:
                 "-c \"DELETE FROM main_instance WHERE hostname = '' OR hostname IS NULL;\" 2>/dev/null || true"
             )
             await self._log("[OK] Cleaned up stale empty-hostname entries from controller database")
+            # Fix 3: Patch installer deprovision task to skip empty hostnames
+            # (AAP installer bug — stdout_lines includes non-hostname output)
+            init_yml = f"{setup_path}/collections/ansible_collections/ansible/containerized_installer/roles/automationcontroller/tasks/init.yml"
+            await self._ssh_cmd(
+                f"grep -q 'when: item | length > 0' {shlex.quote(init_yml)} 2>/dev/null || "
+                f"sed -i '/with_items.*_list_current_nodes.*difference.*_list_inventory_nodes/a\\  when: item | length > 0' {shlex.quote(init_yml)}"
+            )
+            await self._log("[OK] Patched installer deprovision task to skip empty hostnames")
             return True
 
         return False
