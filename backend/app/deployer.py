@@ -786,12 +786,20 @@ class Deployer:
                     break
             if not fqdn:
                 fqdn = self.config.target_host
+            # Fix 1: Add routable_hostname to inventory host entries
             inv_file = f"{shlex.quote(setup_path)}/inventory-wizard"
             for section in ["automationgateway", "automationcontroller", "automationhub", "automationeda"]:
                 await self._ssh_cmd(
                     f"sed -i '/\\[{section}\\]/,/^\\[/{{ /^[^\\[]/{{ /routable_hostname/!s/$/ routable_hostname={fqdn}/}} }}' {inv_file}"
                 )
             await self._log(f"[OK] Added routable_hostname={fqdn} to inventory host entries")
+            # Fix 2: Clean up stale empty-hostname instances from controller DB
+            # (left over from a previous failed run without routable_hostname)
+            await self._ssh_cmd(
+                "podman exec -i postgresql psql -U awx -d awx "
+                "-c \"DELETE FROM main_instance WHERE hostname = '' OR hostname IS NULL;\" 2>/dev/null || true"
+            )
+            await self._log("[OK] Cleaned up stale empty-hostname entries from controller database")
             return True
 
         return False
